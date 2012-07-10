@@ -19,6 +19,8 @@ $(TARGET): build $(OBJECTS)
 run: $(TARGET)
 	./build/cave
 
+valgrind: $(TARGET)
+	valgrind --log-file=/tmp/valgrind.log ./build/cave
 
 check-syntax: CFLAGS=-g -Wall -Wextra -Isrc $(OPTFLAG)
 check-syntax:
