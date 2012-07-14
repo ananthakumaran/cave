@@ -48,7 +48,6 @@ void game_loop()
   int input;
 
   do {
-    clear();
     screen->draw(screen);
     refresh();
     timeout(-1);
