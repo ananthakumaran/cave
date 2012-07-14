@@ -2,18 +2,23 @@
 #include <signal.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <time.h>
 #include "dbg.h"
 #include "utils.h"
 #include "screen.h"
 
 
-static int finish();
+static void finish(int sig);
 static void game_loop();
 
 static Screen *screen = NULL;
 
 int main()
 {
+
+  signal(SIGINT, finish);
+  srand(time(NULL));
+
   initscr();
   curs_set(0); // hide the cursor
   keypad(stdscr, TRUE);
@@ -21,39 +26,35 @@ int main()
   cbreak(); // return after reading one char
   noecho();
 
-  if(has_colors()) {
-    start_color();
-    init_pair(1, COLOR_RED, COLOR_BLACK);
-  }
+  start_color();
 
-  attrset(COLOR_PAIR(1));
+  init_pair(1, COLOR_GREEN, COLOR_BLACK);
+  init_pair(2, COLOR_MAGENTA, COLOR_BLACK);
+  init_pair(3, COLOR_RED, COLOR_BLACK);
 
   screen = Startscreen_create();
   game_loop();
-  finish();
+  finish(0);
 }
 
-static int finish()
+static void finish(int sig)
 {
   endwin();
-  exit(0);
+  exit(sig);
 }
 
 void game_loop()
 {
   int input;
-  Screen *new_screen;
 
   do {
     clear();
-    screen->draw();
+    screen->draw(screen);
     refresh();
     timeout(-1);
     input = getch();
-    new_screen = screen->handle_input(input);
-    free(screen);
-    screen = new_screen;
+    screen = screen->handle_input(screen, input);
   } while(screen != NULL);
 
-  finish();
+  finish(0);
 }
