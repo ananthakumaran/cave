@@ -3,6 +3,8 @@
 
 #include "tile.h"
 
+struct Creature;
+
 typedef struct World {
   int width;
   int height;
@@ -14,7 +16,7 @@ typedef struct World {
 } World;
 
 #define SCREEN_HEIGHT 40
-#define SCREEN_WIDTH 80
+#define SCREEN_WIDTH 75
 
 #define WORLD_HEIGHT 100
 #define WORLD_WIDTH 100
@@ -25,6 +27,9 @@ int World_color(World *world, int x, int y);
 
 World *World_create();
 void World_destroy(World *world);
-void World_scroll_by(World *world, int x, int y);
+void World_center_by(World *world, int x, int y);
+void World_dig(World *world, int x, int y);
+
+void World_add_at_empty_location(World *world, struct Creature *creature);
 
 #endif

@@ -86,3 +86,20 @@ Tile **Tile_smooth(Tile **tiles, int times, int width, int height)
  error:
   return NULL;
 }
+
+int Tile_is_diggable(Tile tile)
+{
+  return TILE_EQ(tile, WALL);
+}
+
+int Tile_is_ground(Tile tile)
+{
+  return !TILE_EQ(tile, WALL) && !TILE_EQ(tile, BOUNDS);
+}
+
+void Tile_draw(Tile tile, int x, int y)
+{
+  move(y, x);
+  attrset(COLOR_PAIR(tile.color));
+  addch(NCURSES_ACS(tile.glyph));
+}

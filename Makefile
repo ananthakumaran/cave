@@ -1,4 +1,4 @@
-CFLAGS=-g -O2 -Wall -Wextra -Isrc -DNDEBUG $(OPTFLAGS)
+CFLAGS=-g -O2 -Wall -Wextra -Isrc $(OPTFLAGS)
 LDFLAGS=-lncurses
 
 TARGET=build/cave
@@ -17,10 +17,10 @@ $(TARGET): build $(OBJECTS)
 	$(CC) -o $@ $(OBJECTS) $(LDFLAGS)
 
 run: $(TARGET)
-	./build/cave
+	./build/cave 2>>/tmp/cave.err
 
 valgrind: $(TARGET)
-	valgrind --log-file=/tmp/valgrind.log ./build/cave
+	valgrind --log-file=/tmp/valgrind.log ./build/cave 2>>/tmp/cave.err
 
 check-syntax: CFLAGS=-g -Wall -Wextra -Isrc $(OPTFLAG)
 check-syntax:

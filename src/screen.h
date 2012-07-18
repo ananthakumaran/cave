@@ -2,6 +2,7 @@
 #define _screen_h
 
 #include "world.h"
+#include "creature.h"
 
 typedef struct Screen Screen;
 
@@ -11,6 +12,7 @@ typedef Screen* (*Screen_handle_input)(Screen *screen, int key);
 struct Screen {
   Screen_draw draw;
   Screen_handle_input handle_input;
+  Creature *player;
   World *world;
 };
 
