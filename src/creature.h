@@ -15,10 +15,11 @@ typedef struct Creature {
   struct CreatureAi *ai;
 } Creature;
 
-Creature *Creature_player_create(World *world);
 
 void Creature_draw(Creature *creature);
-
 void Creature_move_by(Creature *creature, int x, int y);
+
+Creature *Creature_player_create(World *world);
+Creature *Creature_fungus_create(World *world);
 
 #endif

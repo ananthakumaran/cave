@@ -22,6 +22,7 @@ int main()
   initscr();
   curs_set(0); // hide the cursor
   keypad(stdscr, TRUE);
+  nodelay(stdscr, TRUE);
   set_escdelay(10);
   cbreak(); // return after reading one char
   noecho();
@@ -32,6 +33,7 @@ int main()
   init_pair(2, COLOR_MAGENTA, COLOR_BLACK);
   init_pair(3, COLOR_RED, COLOR_BLACK);
   init_pair(4, COLOR_BLUE, COLOR_BLACK);
+  init_pair(5, COLOR_CYAN, COLOR_BLACK);
 
   screen = Startscreen_create();
   game_loop();
@@ -49,11 +51,18 @@ void game_loop()
   int input;
 
   do {
+
     screen->draw(screen);
     refresh();
-    timeout(-1);
+
     input = getch();
-    screen = screen->handle_input(screen, input);
+    if(input != ERR) {
+      screen = screen->handle_input(screen, input);
+    }
+
+    usleep(500);
+    if(screen->tick) screen->tick(screen);
+
   } while(screen != NULL);
 
   finish(0);

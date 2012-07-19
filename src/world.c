@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include "world.h"
 #include "creature.h"
+#include "creature_ai.h"
 #include "tile.h"
 #include "dbg.h"
 #include "utils.h"
@@ -28,6 +29,7 @@ World *World_create()
 {
   World *world = malloc(sizeof(World));
   int i = 0, j = 0;
+  Creature *creature;
 
   int height = WORLD_HEIGHT;
   int width = WORLD_WIDTH;
@@ -50,7 +52,35 @@ World *World_create()
   world->screen_top = 0;
   world->screen_left = 0;
 
+  world->creatures = List_create();
+
+  world->player = Creature_player_create(world);
+  World_add_at_empty_location(world, world->player);
+
+  for(i = 0; i < 5; i++) {
+    creature = Creature_fungus_create(world);
+    World_add_creature(world, creature);
+    World_add_at_empty_location(world, creature);
+
+  }
+
   return world;
+}
+
+void World_add_creature(World *world, Creature *creature)
+{
+  List_push(world->creatures, creature);
+}
+
+void World_tick(World *world)
+{
+  Creature *creature;
+  LIST_FOREACH(world->creatures, first, next, node) {
+    creature = node->value;
+    creature->ai->tick(creature->ai);
+  }
+
+  world->player->ai->tick(world->player->ai);
 }
 
 void World_destroy(World *world)
@@ -80,15 +110,38 @@ void World_dig(World *world, int x, int y)
   }
 }
 
+int World_can_enter(World *world, int x, int y)
+{
+  return Tile_is_ground(World_tile(world, x,y)) && World_creature_at(world, x, y) == NULL;
+}
+
 void World_add_at_empty_location(World *world, Creature *creature)
 {
   int x = 0, y = 0;
 
   do {
-    x = rand() % SCREEN_WIDTH;
-    y = rand() % SCREEN_HEIGHT;
-  } while(!Tile_is_ground(World_tile(world, x,y)));
+    x = rand() % WORLD_WIDTH;
+    y = rand() % WORLD_HEIGHT;
+  } while(!World_can_enter(world, x, y));
 
   creature->x = x;
   creature->y = y;
+}
+
+Creature *World_creature_at(World *world, int x, int y)
+{
+  Creature *creature = NULL;
+
+  LIST_FOREACH(world->creatures, first, next, node) {
+    creature = node->value;
+    if(creature->x == x && creature->y == y) {
+      return creature;
+    }
+  }
+
+  if(world->player && world->player->x == x && world->player->y == y) {
+    return world->player;
+  }
+
+  return NULL;
 }

@@ -2,6 +2,7 @@
 #define _world_h
 
 #include "tile.h"
+#include "list.h"
 
 struct Creature;
 
@@ -13,6 +14,8 @@ typedef struct World {
   int screen_top;
   int screen_left;
   Tile **tiles;
+  struct Creature *player;
+  List *creatures;
 } World;
 
 #define SCREEN_HEIGHT 40
@@ -27,9 +30,14 @@ int World_color(World *world, int x, int y);
 
 World *World_create();
 void World_destroy(World *world);
+void World_tick(World *world);
 void World_center_by(World *world, int x, int y);
 void World_dig(World *world, int x, int y);
+int World_can_enter(World *world, int x, int y);
 
 void World_add_at_empty_location(World *world, struct Creature *creature);
+void World_add_creature(World *world, struct Creature *creature);
+
+struct Creature *World_creature_at(World *world, int x, int y);
 
 #endif
