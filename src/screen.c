@@ -18,6 +18,52 @@ void Screen_destroy(Screen *screen)
   free(screen);
 }
 
+
+static void remove_dead_messages(List *messages, List *dead_messages)
+{
+  LIST_FOREACH(dead_messages, first, next, cur) {
+    List_remove(messages, cur->value);
+  }
+}
+
+#define MAX_MESSAGES 3
+
+static void display_messages(List *messages, int height)
+{
+
+  int space_left = MAX_MESSAGES;
+  Message *m;
+
+  List *dead_messages = List_create();
+
+  LIST_FOREACH(messages, first, next, cur) {
+    m = cur->value;
+
+    if(m->life == 0) continue;
+
+    move(height++, 0);
+    clrtoeol();
+    addstr(m->msg);
+
+    space_left--;
+    if(space_left == 0) break;
+
+    m->life--;
+
+    if(m->life < 1) {
+      List_push(dead_messages, cur);
+    }
+  }
+
+  while(space_left--) {
+    move(height++, 0);
+    clrtoeol();
+  }
+
+  remove_dead_messages(messages, dead_messages);
+  List_destroy(dead_messages);
+}
+
 // start screen
 void Startscreen_draw(Screen *screen)
 {
@@ -43,7 +89,16 @@ void Startscreen_draw(Screen *screen)
 
     Creature_draw(creature);
   }
+
+  int status_board_height = world->screen_height + 1;
+  move(status_board_height, 0);
+  char status[50];
+  sprintf(status, "Health %3d", world->player->hit_point);
+  addstr(status);
+
+  display_messages(world->messages, status_board_height + 1);
 }
+
 
 Screen* Startscreen_handle_input(Screen *screen, int key)
 {

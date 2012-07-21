@@ -16,7 +16,17 @@ static Creature* Creature_create(World *world, char glyph, int color)
   creature->x = -1;
   creature->y = -1;
 
+  creature->hit_point = 0;
+  creature->attack_value = 0;
+  creature->defense_value = 0;
+
   return creature;
+}
+
+void Creature_destroy(Creature *creature)
+{
+  CreatureAi_destroy(creature->ai);
+  free(creature);
 }
 
 
@@ -41,6 +51,9 @@ void Creature_move_by(Creature *creature, int x, int y)
 Creature *Creature_player_create(World *world)
 {
   Creature *player = Creature_create(world, '{', 4);
+  player->hit_point = 100;
+  player->attack_value = 20;
+  player->defense_value = 5;
   player->ai = CreatureAi_player_create(player);
   return player;
 }
@@ -48,6 +61,9 @@ Creature *Creature_player_create(World *world)
 Creature *Creature_fungus_create(World *world)
 {
   Creature *fungus = Creature_create(world, '}', 3);
+  fungus->hit_point = 10;
+  fungus->attack_value = 0;
+  fungus->defense_value = 0;
   fungus->ai = CreatureAi_fungus_create(fungus);
   return fungus;
 }

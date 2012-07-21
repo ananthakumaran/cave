@@ -53,6 +53,7 @@ World *World_create()
   world->screen_left = 0;
 
   world->creatures = List_create();
+  world->messages = List_create();
 
   world->player = Creature_player_create(world);
   World_add_at_empty_location(world, world->player);
@@ -70,6 +71,23 @@ World *World_create()
 void World_add_creature(World *world, Creature *creature)
 {
   List_push(world->creatures, creature);
+}
+
+void World_remove_creature(World *world, Creature *creature)
+{
+  ListNode *node;
+
+  LIST_FOREACH(world->creatures, first, next, cur) {
+    if(cur->value == creature) {
+      node = cur;
+      break;
+    }
+  }
+
+  die(node, "could not find the creature in the world.");
+
+  Creature_destroy(node->value);
+  List_remove(world->creatures, node);
 }
 
 void World_tick(World *world)
@@ -112,7 +130,7 @@ void World_dig(World *world, int x, int y)
 
 int World_can_enter(World *world, int x, int y)
 {
-  return Tile_is_ground(World_tile(world, x,y)) && World_creature_at(world, x, y) == NULL;
+  return Tile_is_ground(World_tile(world, x, y)) && World_creature_at(world, x, y) == NULL;
 }
 
 void World_add_at_empty_location(World *world, Creature *creature)
@@ -144,4 +162,13 @@ Creature *World_creature_at(World *world, int x, int y)
   }
 
   return NULL;
+}
+
+void World_notify(World *world, char *message)
+{
+  Message *m =  malloc(sizeof(Message));
+  m->msg = message;
+  m->life = 200;
+
+  List_push(world->messages, m);
 }

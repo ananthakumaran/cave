@@ -11,11 +11,17 @@ typedef struct Creature {
   int y;
   char glyph;
   int color;
+
+  int hit_point;
+  int attack_value;
+  int defense_value;
+
   World *world;
   struct CreatureAi *ai;
 } Creature;
 
 
+void Creature_destroy(Creature *creature);
 void Creature_draw(Creature *creature);
 void Creature_move_by(Creature *creature, int x, int y);
 

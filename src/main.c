@@ -60,7 +60,7 @@ void game_loop()
       screen = screen->handle_input(screen, input);
     }
 
-    usleep(500);
+    usleep(5000);
     if(screen->tick) screen->tick(screen);
 
   } while(screen != NULL);

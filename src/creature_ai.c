@@ -2,16 +2,36 @@
 #include "creature_ai.h"
 #include "creature.h"
 #include "tile.h"
+#include "utils.h"
 #include "dbg.h"
 
-static CreatureAi *CreatureAi_create(Creature *creature, CreatureAi_enter enter, CreatureAi_tick tick)
+static void CreatureAi_hit_default(CreatureAi *ai, int power)
+{
+  ai->creature->hit_point -= power;
+  if(ai->creature->hit_point < 1) {
+    World_remove_creature(ai->creature->world, ai->creature);
+  }
+}
+
+static CreatureAi *CreatureAi_create(Creature *creature, CreatureAi_enter enter, CreatureAi_tick tick, CreatureAi_hit hit)
 {
   CreatureAi *ai = malloc(sizeof(CreatureAi));
   ai->creature = creature;
   ai->enter = enter;
   ai->tick = tick;
 
+  if(hit) {
+    ai->hit = hit;
+  } else {
+    ai->hit = CreatureAi_hit_default;
+  }
+
   return ai;
+}
+
+void CreatureAi_destroy(CreatureAi *ai)
+{
+  free(ai);
 }
 
 #pragma GCC diagnostic push
@@ -29,6 +49,16 @@ static void CreatureAi_player_tick(CreatureAi *ai)
 
 #pragma GCC diagnostic pop
 
+static void CreatureAi_player_attack(Creature *player, Creature *creature)
+{
+  int amount = MAX(1, player->attack_value - creature->defense_value);
+  amount = rand() % amount;
+  creature->ai->hit(creature->ai, amount);
+  player->hit_point -= 1;
+
+  World_notify(player->world, "You have attacked a fungus");
+}
+
 static void CreatureAi_player_enter(CreatureAi *ai, int x, int y)
 {
   Tile tile = World_tile(ai->creature->world, x, y);
@@ -37,7 +67,7 @@ static void CreatureAi_player_enter(CreatureAi *ai, int x, int y)
   Creature *other = World_creature_at(ai->creature->world, x, y);
 
   if(other) {
-    // noop
+    CreatureAi_player_attack(ai->creature, other);
   } else {
     if(Tile_is_ground(tile)) {
       creature->x = x;
@@ -52,7 +82,7 @@ static void CreatureAi_player_enter(CreatureAi *ai, int x, int y)
 
 CreatureAi *CreatureAi_player_create(Creature *player)
 {
-  return CreatureAi_create(player, CreatureAi_player_enter, CreatureAi_player_tick);
+  return CreatureAi_create(player, CreatureAi_player_enter, CreatureAi_player_tick, NULL);
 }
 
 #define FUNGI_SPREAD_DISTANCE 10
@@ -75,14 +105,14 @@ static void fungus_spread(CreatureAi *fungus_ai)
 
 void CreatureAi_fungus_tick(CreatureAi *fungus_ai)
 {
-  if(fungus_ai->spread_count < 5 && rand() % 10000 == 0) {
+  if(fungus_ai->spread_count < 5 && rand() % 5000 == 0) {
     fungus_spread(fungus_ai);
   }
 }
 
 CreatureAi *CreatureAi_fungus_create(Creature *fungus)
 {
-  CreatureAi *fungus_ai = CreatureAi_create(fungus, CreatureAi_fungus_enter, CreatureAi_fungus_tick);
+  CreatureAi *fungus_ai = CreatureAi_create(fungus, CreatureAi_fungus_enter, CreatureAi_fungus_tick, NULL);
   fungus_ai->spread_count = 0;
   return fungus_ai;
 }

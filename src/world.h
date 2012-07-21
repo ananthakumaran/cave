@@ -6,6 +6,11 @@
 
 struct Creature;
 
+typedef struct Message {
+  char *msg;
+  int life;
+} Message;
+
 typedef struct World {
   int width;
   int height;
@@ -16,6 +21,7 @@ typedef struct World {
   Tile **tiles;
   struct Creature *player;
   List *creatures;
+  List *messages;
 } World;
 
 #define SCREEN_HEIGHT 40
@@ -37,6 +43,8 @@ int World_can_enter(World *world, int x, int y);
 
 void World_add_at_empty_location(World *world, struct Creature *creature);
 void World_add_creature(World *world, struct Creature *creature);
+void World_remove_creature(World *world, struct Creature *creature);
+void World_notify(World *world, char *message);
 
 struct Creature *World_creature_at(World *world, int x, int y);
 
