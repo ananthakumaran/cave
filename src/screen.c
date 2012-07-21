@@ -51,6 +51,7 @@ static void display_messages(List *messages, int height)
     m->life--;
 
     if(m->life < 1) {
+      free(m);
       List_push(dead_messages, cur);
     }
   }
