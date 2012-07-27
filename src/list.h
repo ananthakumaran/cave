@@ -32,6 +32,9 @@ void* List_pop(List *list);
 void List_shift(List *list, void *value);
 void* List_unshift(List *list);
 
+int List_contains(List *List, void *value);
+void List_shuffle(List *list);
+
 void* List_remove(List *list, ListNode *node);
 
 #define LIST_FOREACH(L, S, M, V) ListNode *_node = NULL;	\

@@ -37,7 +37,7 @@ void CreatureAi_destroy(CreatureAi *ai)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
 
-static void CreatureAi_fungus_enter(CreatureAi *ai, int x, int y)
+static void CreatureAi_fungus_enter(CreatureAi *ai, int x, int y, int z)
 {
 // noop
 }
@@ -59,12 +59,39 @@ static void CreatureAi_player_attack(Creature *player, Creature *creature)
   World_notify(player->world, "You have attacked a fungus");
 }
 
-static void CreatureAi_player_enter(CreatureAi *ai, int x, int y)
+static void CreatureAi_player_enter(CreatureAi *ai, int x, int y, int z)
 {
-  Tile tile = World_tile(ai->creature->world, x, y);
+  Tile tile = World_tile(ai->creature->world, x, y, z);
   Creature *creature = ai->creature;
 
-  Creature *other = World_creature_at(ai->creature->world, x, y);
+  int dz = z - ai->creature->z;
+
+  Tile current_tile = World_tile(ai->creature->world, ai->creature->x, ai->creature->y, ai->creature->z);
+
+  if(dz == -1) {
+    if(TILE_EQ(current_tile, STAIR_UP)) {
+      World_notify(creature->world, "Walk up the stairs");
+    } else {
+      World_notify(creature->world, "Not stairs in the top");
+      return;
+    }
+  } else if(dz == 1) {
+    if(TILE_EQ(current_tile, STAIR_DOWN)) {
+      World_notify(creature->world, "Walk down the stairs");
+    } else {
+      World_notify(creature->world, "No stairs in the bottom");
+      return;
+    }
+  }
+
+  if(dz != 0) {
+    creature->x = x;
+    creature->y = y;
+    creature->z = z;
+    return;
+  }
+
+  Creature *other = World_creature_at(ai->creature->world, x, y, z);
 
   if(other) {
     CreatureAi_player_attack(ai->creature, other);
@@ -73,7 +100,7 @@ static void CreatureAi_player_enter(CreatureAi *ai, int x, int y)
       creature->x = x;
       creature->y = y;
     } else if(Tile_is_diggable(tile)) {
-      World_dig(creature->world, x, y);
+      World_dig(creature->world, x, y, z);
       creature->x = x;
       creature->y = y;
     }
@@ -93,12 +120,14 @@ static void fungus_spread(CreatureAi *fungus_ai)
   World *world = fungus_ai->creature->world;
   int x = fungus_ai->creature->x + (rand() % FUNGI_SPREAD_DISTANCE) - FUNGI_SPREAD_DISTANCE / 2;
   int y = fungus_ai->creature->y + (rand() % FUNGI_SPREAD_DISTANCE) - FUNGI_SPREAD_DISTANCE / 2;
+  int z = fungus_ai->creature->z + ((rand() % 3) - 1);
 
-  if(World_can_enter(world, x, y)) {
+  if(World_can_enter(world, x, y, z)) {
     child = Creature_fungus_create(world);
     World_add_creature(world, child);
     child->x = x;
     child->y = y;
+    child->z = z;
     fungus_ai->spread_count++;
   }
 }

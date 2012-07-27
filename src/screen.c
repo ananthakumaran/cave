@@ -72,13 +72,14 @@ void Startscreen_draw(Screen *screen)
   Creature *creature;
 
   World *world = screen->world;
+  Creature *player = world->player;
 
-  World_center_by(world, world->player->x, world->player->y);
+  World_center_by(world, player->x, player->y);
 
   for(y = 0; y <= world->screen_height; y++) {
     for(x = 0; x <= world->screen_width; x++) {
 
-      Tile tile = World_tile(world, world->screen_left + x, world->screen_top + y);
+      Tile tile = World_tile(world, world->screen_left + x, world->screen_top + y, world->player->z);
       Tile_draw(tile, x, y);
     }
   }
@@ -88,7 +89,9 @@ void Startscreen_draw(Screen *screen)
   LIST_FOREACH(screen->world->creatures, first, next, node) {
     creature = node->value;
 
-    Creature_draw(creature);
+    if(creature->z == player->z) {
+      Creature_draw(creature);
+    }
   }
 
   int status_board_height = world->screen_height + 1;
@@ -108,19 +111,25 @@ Screen* Startscreen_handle_input(Screen *screen, int key)
   switch(key) {
   case KEY_UP:
   case 'k':
-    Creature_move_by(player, 0, -1);
+    Creature_move_by(player, 0, -1, 0);
     break;
   case KEY_DOWN:
   case 'j':
-    Creature_move_by(player, 0, 1);
+    Creature_move_by(player, 0, 1, 0);
     break;
   case KEY_LEFT:
   case 'h':
-    Creature_move_by(player, -1, 0);
+    Creature_move_by(player, -1, 0, 0);
     break;
   case KEY_RIGHT:
   case 'l':
-    Creature_move_by(player, 1, 0);
+    Creature_move_by(player, 1, 0, 0);
+    break;
+  case '<':
+    Creature_move_by(player, 0, 0, -1);
+    break;
+  case '>':
+    Creature_move_by(player, 0, 0, 1);
     break;
   }
   return screen;

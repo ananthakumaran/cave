@@ -86,6 +86,41 @@ void* List_unshift(List *list)
   return node != NULL ? List_remove(list, node) : NULL;
 }
 
+int List_contains(List *list, void *value)
+{
+  LIST_FOREACH(list, first, next, cur) {
+    if(cur->value == value) return 1;
+  }
+
+  return 0;
+}
+
+void List_shuffle(List *list)
+{
+  int times = List_count(list);
+  int i;
+  ListNode *random_node;
+  void *temp;
+
+
+  while(times--) {
+
+    i = rand() % List_count(list);
+
+    LIST_FOREACH(list, first, next, cur) {
+      if(!i--) {
+	random_node = cur;
+	break;
+      }
+    }
+
+    temp = list->first->value;
+    list->first->value = random_node->value;
+    random_node->value = temp;
+
+  }
+}
+
 
 void* List_remove(List *list, ListNode *node)
 {

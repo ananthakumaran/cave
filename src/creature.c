@@ -15,6 +15,7 @@ static Creature* Creature_create(World *world, char glyph, int color)
   creature->color = color;
   creature->x = -1;
   creature->y = -1;
+  creature->z = -1;
 
   creature->hit_point = 0;
   creature->attack_value = 0;
@@ -43,9 +44,9 @@ void Creature_draw(Creature *creature)
   }
 }
 
-void Creature_move_by(Creature *creature, int x, int y)
+void Creature_move_by(Creature *creature, int x, int y, int z)
 {
-  creature->ai->enter(creature->ai, creature->x + x, creature->y + y);
+  creature->ai->enter(creature->ai, creature->x + x, creature->y + y, creature->z + z);
 }
 
 Creature *Creature_player_create(World *world)

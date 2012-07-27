@@ -5,7 +5,7 @@
 
 typedef struct CreatureAi CreatureAi;
 
-typedef void (*CreatureAi_enter)(CreatureAi *ai, int x, int y);
+typedef void (*CreatureAi_enter)(CreatureAi *ai, int x, int y, int z);
 typedef void (*CreatureAi_tick)(CreatureAi *ai);
 typedef void (*CreatureAi_hit)(CreatureAi *ai, int power);
 
