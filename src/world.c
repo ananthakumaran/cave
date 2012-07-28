@@ -113,12 +113,12 @@ static List *find_region_overlaps(World *world, int z, int r1, int r2)
 
 static void World_connect_regions_down(World *world, int z)
 {
-  int x, y;
+  int x, y, connected;
 
-  // bad idea?
-  Bitmap *is_connected = Bitmap_create(world->region_count * world->region_count);
+  List *connections = List_create();
+  char *region_link = NULL;
 
-  int r1, r2, stairs, candidates_size;
+  int r1, r2, rc, stairs, candidates_size;
 
   for(x = 0; x < world->width; x++) {
     for(y = 0; y < world->height; y++) {
@@ -126,11 +126,22 @@ static void World_connect_regions_down(World *world, int z)
       r1 = world->regions[x][y][z];
       r2 = world->regions[x][y][z + 1];
 
+      rc = asprintf(&region_link, "%d - %d", r1, r2);
+      die(rc != -1, "Out of memory");
+
+      connected = 0;
+      LIST_FOREACH(connections, first, next, cur) {
+	if(strcmp(cur->value, region_link) == 0) {
+	  connected = 1;
+	  break;
+	}
+      }
+
       if(TILE_EQ(world->tiles[x][y][z], FLOOR) &&
 	 TILE_EQ(world->tiles[x][y][z + 1], FLOOR) &&
-	 (!Bitmap_isset(is_connected, r1 * r2))) {
+	 (!connected)) {
 
-	Bitmap_set(is_connected, r1 * r2);
+	List_push(connections, region_link);
 
 	List *candidates = find_region_overlaps(world, z, r1, r2);
 	stairs = 0;
@@ -147,11 +158,13 @@ static void World_connect_regions_down(World *world, int z)
 	}
 
 	List_clear_destroy(candidates);
+      } else {
+	free(region_link);
       }
     }
   }
 
-  Bitmap_destroy(is_connected);
+  List_clear_destroy(connections);
 }
 
 static void World_connect_regions(World *world)
