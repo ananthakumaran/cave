@@ -4,11 +4,18 @@ LDFLAGS=-lncurses
 TARGET=build/cave
 SOURCES=$(wildcard src/*.c)
 OBJECTS=$(patsubst %.c,%.o,$(SOURCES))
+DEPS=$(patsubst %.c,%.d,$(SOURCES))
 
 all: $(TARGET)
 
+
 %.o: %.c
 	$(CC) $(CFLAGS) -c -o $@ $<
+
+%.d: %.c
+	$(CC) $(CFLAGS) -MM -MT $*.o -o $@ $<
+
+-include $(DEPS)
 
 build:
 	@mkdir -p build
@@ -27,4 +34,4 @@ check-syntax:
 	$(CC) $(CFLAGS) -fsyntax-only $(CHK_SOURCES)
 
 clean:
-	rm -rf build $(OBJECTS)
+	rm -rf build $(OBJECTS) $(DEPS)
