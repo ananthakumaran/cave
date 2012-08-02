@@ -13,27 +13,6 @@ static void CreatureAi_hit_default(CreatureAi *ai, int power)
   }
 }
 
-static CreatureAi *CreatureAi_create(Creature *creature, CreatureAi_enter enter, CreatureAi_tick tick, CreatureAi_hit hit)
-{
-  CreatureAi *ai = malloc(sizeof(CreatureAi));
-  ai->creature = creature;
-  ai->enter = enter;
-  ai->tick = tick;
-
-  if(hit) {
-    ai->hit = hit;
-  } else {
-    ai->hit = CreatureAi_hit_default;
-  }
-
-  return ai;
-}
-
-void CreatureAi_destroy(CreatureAi *ai)
-{
-  free(ai);
-}
-
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
 
@@ -47,7 +26,41 @@ static void CreatureAi_player_tick(CreatureAi *ai)
 // noop
 }
 
+static int CreatureAi_can_see_default(CreatureAi *ai, int x, int y, int z)
+{
+  return 0;
+}
+
 #pragma GCC diagnostic pop
+
+
+static CreatureAi *CreatureAi_create(Creature *creature, CreatureAi_enter enter, CreatureAi_tick tick, CreatureAi_hit hit, CreatureAi_can_see can_see)
+{
+  CreatureAi *ai = malloc(sizeof(CreatureAi));
+  ai->creature = creature;
+  ai->enter = enter;
+  ai->tick = tick;
+
+  if(hit) {
+    ai->hit = hit;
+  } else {
+    ai->hit = CreatureAi_hit_default;
+  }
+
+  if(can_see) {
+    ai->can_see = can_see;
+  } else {
+    ai->can_see = CreatureAi_can_see_default;
+  }
+
+  return ai;
+}
+
+void CreatureAi_destroy(CreatureAi *ai)
+{
+  free(ai);
+}
+
 
 static void CreatureAi_player_attack(Creature *player, Creature *creature)
 {
@@ -107,9 +120,71 @@ static void CreatureAi_player_enter(CreatureAi *ai, int x, int y, int z)
   }
 }
 
+
+static List *Line(int x0, int y0, int x1, int y1)
+{
+  List *points = List_create();
+
+  Point *point;
+
+  int sx, sy, err, e2;
+  int dx = abs(x1 - x0);
+  int dy = abs(y1 - y0);
+
+  sx = x0 < x1 ? 1 : -1;
+  sy = y0 < y1 ? 1 : -1;
+
+  err = dx - dy;
+
+  while(1) {
+    if(x0 == x1 && y0 == y1) break;
+
+    point = Point_create(x0, y0, 0);
+    List_push(points, point);
+
+    e2 = 2 * err;
+
+    if(e2 > -dy) {
+      err -= dy;
+      x0 += sx;
+    }
+
+    if(e2 < dx) {
+      err += dx;
+      y0 += sy;
+    }
+  }
+
+  return points;
+}
+
+int CreatureAi_player_can_see(CreatureAi *ai, int x, int y, int z)
+{
+  Creature *player = ai->creature;
+
+  if(player->z != z) return 0;
+
+  if((player->x - x) * (player->x - x) + (player->y - y) * (player->y - y) >
+     player->vision_radius * player->vision_radius) return 0;
+
+  List *points = Line(player->x, player->y, x, y);
+
+  Point *p;
+  LIST_FOREACH(points, first, next, cur) {
+    p = cur->value;
+    if(!(Tile_is_ground(World_tile(player->world, p->x, p->y, player->z)) || (player->x == p->x && player->y == p->y))) {
+      List_clear_destroy(points);
+      return 0;
+    }
+  }
+
+  List_clear_destroy(points);
+  return 1;
+}
+
 CreatureAi *CreatureAi_player_create(Creature *player)
 {
-  return CreatureAi_create(player, CreatureAi_player_enter, CreatureAi_player_tick, NULL);
+  return CreatureAi_create(player, CreatureAi_player_enter, CreatureAi_player_tick, NULL, CreatureAi_player_can_see);
 }
 
 #define FUNGI_SPREAD_DISTANCE 10
@@ -141,7 +216,7 @@ void CreatureAi_fungus_tick(CreatureAi *fungus_ai)
 
 CreatureAi *CreatureAi_fungus_create(Creature *fungus)
 {
-  CreatureAi *fungus_ai = CreatureAi_create(fungus, CreatureAi_fungus_enter, CreatureAi_fungus_tick, NULL);
+  CreatureAi *fungus_ai = CreatureAi_create(fungus, CreatureAi_fungus_enter, CreatureAi_fungus_tick, NULL, NULL);
   fungus_ai->spread_count = 0;
   return fungus_ai;
 }

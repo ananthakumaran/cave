@@ -20,6 +20,7 @@ static Creature* Creature_create(World *world, char glyph, int color)
   creature->hit_point = 0;
   creature->attack_value = 0;
   creature->defense_value = 0;
+  creature->vision_radius = 0;
 
   return creature;
 }
@@ -55,6 +56,7 @@ Creature *Creature_player_create(World *world)
   player->hit_point = 100;
   player->attack_value = 20;
   player->defense_value = 5;
+  player->vision_radius = 10;
   player->ai = CreatureAi_player_create(player);
   return player;
 }

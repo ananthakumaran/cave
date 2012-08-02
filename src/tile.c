@@ -29,6 +29,11 @@ Tile STAIR_DOWN = {
   .color = 8
 };
 
+Tile UNKNOWN = {
+  .glyph = ' ',
+  .color = 5
+};
+
 
 Tile ***Tile_create(int width, int height, int depth)
 {

@@ -16,6 +16,7 @@ typedef struct Creature {
   int hit_point;
   int attack_value;
   int defense_value;
+  int vision_radius;
 
   World *world;
   struct CreatureAi *ai;

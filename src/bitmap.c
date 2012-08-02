@@ -9,6 +9,8 @@ Bitmap *Bitmap_create(size_t size)
   int byte_required = ((size - 1) / 8) + 1;
 
   Bitmap *map = calloc(1, sizeof(Bitmap) + byte_required);
+  check_mem(map);
+
   map->size = size;
 
   return map;

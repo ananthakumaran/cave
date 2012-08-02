@@ -13,6 +13,7 @@ extern Tile WALL;
 extern Tile BOUNDS;
 extern Tile STAIR_UP;
 extern Tile STAIR_DOWN;
+extern Tile UNKNOWN;
 
 Tile ***Tile_create(int width, int height, int depth);
 void Tile_destroy(Tile ***tiles, int height, int width);

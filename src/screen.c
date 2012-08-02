@@ -5,6 +5,7 @@
 #include "utils.h"
 #include "tile.h"
 #include "creature.h"
+#include "creature_ai.h"
 #include "list.h"
 
 #define ESCAPE_KEY 27
@@ -65,10 +66,28 @@ static void display_messages(List *messages, int height)
   List_destroy(dead_messages);
 }
 
+static int is_visible(Screen *screen, int x, int y, int z)
+{
+  int X = screen->world->width;
+  int Y = screen->world->height;
+
+  return Bitmap_isset(screen->visible, (X * Y * z) + (X * y) + x);
+}
+
+static void set_visible(Screen *screen, int x, int y, int z)
+{
+
+  int X = screen->world->width;
+  int Y = screen->world->height;
+
+  Bitmap_set(screen->visible, (X * Y * z) + (X * y) + x);
+}
+
+
 // start screen
 void Startscreen_draw(Screen *screen)
 {
-  int x = 0, y = 0;
+  int x = 0, y = 0, wx, wy, wz;
   Creature *creature;
 
   World *world = screen->world;
@@ -79,8 +98,16 @@ void Startscreen_draw(Screen *screen)
   for(y = 0; y <= world->screen_height; y++) {
     for(x = 0; x <= world->screen_width; x++) {
 
-      Tile tile = World_tile(world, world->screen_left + x, world->screen_top + y, world->player->z);
-      Tile_draw(tile, x, y);
+      wx = world->screen_left + x;
+      wy = world->screen_top + y;
+      wz = player->z;
+      if(is_visible(screen, wx, wy, wz) || player->ai->can_see(player->ai, wx, wy, wz)) {
+	set_visible(screen, wx, wy, wz);
+	Tile tile = World_tile(world, wx, wy, wz);
+	Tile_draw(tile, x, y);
+      } else {
+	Tile_draw(UNKNOWN, x, y);
+      }
     }
   }
 
@@ -90,7 +117,10 @@ void Startscreen_draw(Screen *screen)
     creature = node->value;
 
     if(creature->z == player->z) {
-      Creature_draw(creature);
+      if(is_visible(screen, creature->x, creature->y, creature->z) || player->ai->can_see(player->ai, creature->x, creature->y, player->z)) {
+	set_visible(screen, creature->x, creature->y, creature->z);
+	Creature_draw(creature);
+      }
     }
   }
 
@@ -149,6 +179,10 @@ Screen* Startscreen_create()
   screen->handle_input = Startscreen_handle_input;
   screen->tick = Startscreen_tick;
   screen->world = World_create();
+  screen->visible = Bitmap_create(screen->world->width * screen->world->height * screen->world->depth);
+
+  die(screen->visible, "Out of memory");
+
 
   return screen;
 }

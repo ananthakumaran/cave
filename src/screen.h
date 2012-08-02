@@ -2,6 +2,7 @@
 #define _screen_h
 
 #include "world.h"
+#include "bitmap.h"
 
 typedef struct Screen Screen;
 
@@ -14,6 +15,7 @@ struct Screen {
   Screen_handle_input handle_input;
   Screen_tick tick;
   World *world;
+  Bitmap *visible;
 };
 
 
