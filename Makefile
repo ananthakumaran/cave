@@ -8,14 +8,13 @@ DEPS=$(patsubst %.c,%.d,$(SOURCES))
 
 all: $(TARGET)
 
+-include $(DEPS)
 
-%.o: %.c
-	$(CC) $(CFLAGS) -c -o $@ $<
+%.o: %.d %.c
+	$(CC) $(CFLAGS) -c -o $@ $*.c
 
 %.d: %.c
-	$(CC) $(CFLAGS) -MM -MT $*.o -o $@ $<
-
--include $(DEPS)
+	$(CC) $(CFLAGS) -MM -MT '$*.o $*.d' -o $@ $<
 
 build:
 	@mkdir -p build

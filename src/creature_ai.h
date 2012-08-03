@@ -1,7 +1,7 @@
 #ifndef __creature_ai_h
 #define __creature_ai_h
 
-#include <creature.h>
+#include "creature.h"
 
 typedef struct CreatureAi CreatureAi;
 

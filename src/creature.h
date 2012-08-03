@@ -2,7 +2,7 @@
 #define __creature_h
 
 #include <curses.h>
-#include <world.h>
+#include "world.h"
 
 struct CreatureAi;
 

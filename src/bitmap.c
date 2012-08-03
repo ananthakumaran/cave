@@ -1,5 +1,5 @@
-#include <bitmap.h>
-#include <dbg.h>
+#include "bitmap.h"
+#include "dbg.h"
 
 
 Bitmap *Bitmap_create(size_t size)
