@@ -16,11 +16,6 @@ static void CreatureAi_hit_default(CreatureAi *ai, int power)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
 
-static void CreatureAi_fungus_enter(CreatureAi *ai, int x, int y, int z)
-{
-// noop
-}
-
 static void CreatureAi_player_tick(CreatureAi *ai)
 {
 // noop
@@ -67,7 +62,6 @@ static void CreatureAi_player_attack(Creature *player, Creature *creature)
   int amount = MAX(1, player->attack_value - creature->defense_value);
   amount = rand() % amount;
   creature->ai->hit(creature->ai, amount);
-  player->hit_point -= 1;
 
   World_notify(player->world, "You have attacked a fungus");
 }
@@ -207,10 +201,36 @@ static void fungus_spread(CreatureAi *fungus_ai)
   }
 }
 
+static void CreatureAi_fungus_enter(CreatureAi *ai, int x, int y, int z)
+{
+  Creature *fungus = ai->creature;
+  Tile tile = World_tile(fungus->world, x, y, z);
+
+  Creature *other = World_creature_at(ai->creature->world, x, y, z);
+
+  if(other) {
+    other->ai->hit(other->ai, fungus->attack_value);
+  } else if(Tile_is_ground(tile)) {
+     fungus->x = x;
+     fungus->y = y;
+     fungus->z = z;
+   }
+}
+
 void CreatureAi_fungus_tick(CreatureAi *fungus_ai)
 {
+  Creature *fungus = fungus_ai->creature;
+
   if(fungus_ai->spread_count < 5 && rand() % 5000 == 0) {
     fungus_spread(fungus_ai);
+  }
+
+  // wander
+  if(rand() % 100 == 0) {
+    int mx = (rand() % 3) - 1;
+    int my = (rand() % 3) - 1;
+
+    Creature_move_by(fungus, mx, my, 0);
   }
 }
 

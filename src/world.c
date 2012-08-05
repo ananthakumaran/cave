@@ -232,7 +232,7 @@ World *World_create()
   world->player = Creature_player_create(world);
   World_add_at_empty_location(world, world->player);
 
-  for(i = 0; i < 50; i++) {
+  for(i = 0; i < 500; i++) {
     creature = Creature_fungus_create(world);
     World_add_creature(world, creature);
     World_add_at_empty_location(world, creature);

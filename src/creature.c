@@ -65,7 +65,7 @@ Creature *Creature_fungus_create(World *world)
 {
   Creature *fungus = Creature_create(world, '}', 3);
   fungus->hit_point = 10;
-  fungus->attack_value = 0;
+  fungus->attack_value = 1;
   fungus->defense_value = 0;
   fungus->ai = CreatureAi_fungus_create(fungus);
   return fungus;
