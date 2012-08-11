@@ -1,4 +1,4 @@
-CFLAGS=-g -O2 -Wall -Wextra -Isrc $(OPTFLAGS)
+CFLAGS=-g -O0 -Wall -Wextra -Isrc $(OPTFLAGS)
 LDFLAGS=-lncurses
 
 TARGET=build/cave
@@ -26,7 +26,7 @@ run: $(TARGET)
 	./build/cave 2>>/tmp/cave.err
 
 valgrind: $(TARGET)
-	valgrind --log-file=/tmp/valgrind.log ./build/cave 2>>/tmp/cave.err
+	valgrind --log-file=/tmp/valgrind.log --leak-check=full --track-origins=yes --dsymutil=yes ./build/cave 2>>/tmp/cave.err
 
 check-syntax: CFLAGS=-g -Wall -Wextra -Isrc $(OPTFLAG)
 check-syntax:
