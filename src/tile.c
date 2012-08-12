@@ -3,6 +3,8 @@
 #include <unistd.h>
 #include "dbg.h"
 #include "tile.h"
+#include "world.h"
+#include "utils.h"
 
 Tile BOUNDS = {
   .glyph = 'n',
@@ -32,6 +34,11 @@ Tile STAIR_DOWN = {
 Tile UNKNOWN = {
   .glyph = ' ',
   .color = 5
+};
+
+Tile ROCK = {
+  .glyph = 'h',
+  .color = 3
 };
 
 

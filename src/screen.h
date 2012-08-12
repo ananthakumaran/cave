@@ -16,14 +16,21 @@ struct Screen {
   Screen_tick tick;
   World *world;
   Bitmap *visible;
+
+  Screen* parent;
 };
 
 
 void Screen_destroy(Screen *screen);
 
-// startscreen
-void Startscreen_draw();
-Screen* Startscreen_handle_input();
-Screen* Startscreen_create();
+// play screen
+void Playscreen_draw(Screen *screen);
+Screen* Playscreen_handle_input(Screen *screen, int key);
+Screen* Playscreen_create();
+
+// inventory screen
+void Inventoryscreen_draw();
+Screen* Inventoryscreen_handle_input(Screen *screen, int key);
+Screen* Inventoryscreen_create(Screen *play_screen);
 
 #endif

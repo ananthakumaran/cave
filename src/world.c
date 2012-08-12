@@ -2,6 +2,7 @@
 #include "world.h"
 #include "creature.h"
 #include "creature_ai.h"
+#include "item.h"
 #include "tile.h"
 #include "dbg.h"
 #include "utils.h"
@@ -21,11 +22,11 @@ Point *Point_create(int x, int y, int z)
 
 Tile World_tile(World *world, int x, int y, int z)
 {
-    if(x < 0 || x >= world->width || y < 0 || y >= world->height || z < 0 || z >= world->depth) {
-      return BOUNDS;
-    } else {
-      return world->tiles[x][y][z];
-    }
+  if(x < 0 || x >= world->width || y < 0 || y >= world->height || z < 0 || z >= world->depth) {
+    return BOUNDS;
+  } else {
+    return world->tiles[x][y][z];
+  }
 }
 
 char World_glyph(World *world, int x, int y, int z)
@@ -53,7 +54,7 @@ static void World_alloc_regions(World *world)
       die(regions[i][j], "Out of memory");
 
       for(k = 0; k < world->depth; k++) {
-	regions[i][j][k] = 0;
+        regions[i][j][k] = 0;
       }
     }
   }
@@ -75,12 +76,12 @@ static void World_fill_region(World *world, int region, int x, int y, int z)
     for(nx = point->x - 1; nx <= point->x + 1; nx++) {
       if(nx < 0 || nx >= world->width) continue;
       for(ny = point->y - 1; ny <= point->y + 1; ny++) {
-	if(ny < 0 || ny >= world->height) continue;
+        if(ny < 0 || ny >= world->height) continue;
 
-	if(!TILE_EQ(world->tiles[nx][ny][z], WALL) && world->regions[nx][ny][z] == 0) {
-	  world->regions[nx][ny][z] = region;
-	  List_push(open, Point_create(nx, ny, z));
-	}
+        if(!TILE_EQ(world->tiles[nx][ny][z], WALL) && world->regions[nx][ny][z] == 0) {
+          world->regions[nx][ny][z] = region;
+          List_push(open, Point_create(nx, ny, z));
+        }
       }
     }
 
@@ -99,10 +100,10 @@ static List *find_region_overlaps(World *world, int z, int r1, int r2)
   for(x = 0; x < world->width; x++) {
     for(y = 0; y < world->height; y++) {
       if(TILE_EQ(world->tiles[x][y][z], FLOOR) &&
-	 TILE_EQ(world->tiles[x][y][z + 1], FLOOR) &&
-	 world->regions[x][y][z] == r1 &&
-	 world->regions[x][y][z + 1] == r2) {
-	List_push(result, Point_create(x, y, z));
+         TILE_EQ(world->tiles[x][y][z + 1], FLOOR) &&
+         world->regions[x][y][z] == r1 &&
+         world->regions[x][y][z + 1] == r2) {
+        List_push(result, Point_create(x, y, z));
       }
     }
   }
@@ -131,35 +132,35 @@ static void World_connect_regions_down(World *world, int z)
 
       connected = 0;
       LIST_FOREACH(connections, first, next, cur) {
-	if(strcmp(cur->value, region_link) == 0) {
-	  connected = 1;
-	  break;
-	}
+        if(strcmp(cur->value, region_link) == 0) {
+          connected = 1;
+          break;
+        }
       }
 
       if(TILE_EQ(world->tiles[x][y][z], FLOOR) &&
-	 TILE_EQ(world->tiles[x][y][z + 1], FLOOR) &&
-	 (!connected)) {
+         TILE_EQ(world->tiles[x][y][z + 1], FLOOR) &&
+         (!connected)) {
 
-	List_push(connections, region_link);
+        List_push(connections, region_link);
 
-	List *candidates = find_region_overlaps(world, z, r1, r2);
-	stairs = 0;
-	candidates_size = List_count(candidates);
+        List *candidates = find_region_overlaps(world, z, r1, r2);
+        stairs = 0;
+        candidates_size = List_count(candidates);
 
-	if(candidates_size > 0) {
-	  do {
-	    Point *p = List_unshift(candidates);
-	    world->tiles[p->x][p->y][z] = STAIR_DOWN;
-	    world->tiles[p->x][p->y][z+1] = STAIR_UP;
-	    free(p);
-	    stairs++;
-	  } while((candidates_size / stairs > 250) && List_count(candidates));
-	}
+        if(candidates_size > 0) {
+          do {
+            Point *p = List_unshift(candidates);
+            world->tiles[p->x][p->y][z] = STAIR_DOWN;
+            world->tiles[p->x][p->y][z+1] = STAIR_UP;
+            free(p);
+            stairs++;
+          } while((candidates_size / stairs > 250) && List_count(candidates));
+        }
 
-	List_clear_destroy(candidates);
+        List_clear_destroy(candidates);
       } else {
-	free(region_link);
+        free(region_link);
       }
     }
   }
@@ -184,12 +185,26 @@ static void World_create_regions(World *world)
   for(x = 0; x < world->width; x++) {
     for(y = 0; y < world->height; y++) {
       for(z = 0; z < world->depth; z++) {
-	if(!TILE_EQ(world->tiles[x][y][z], WALL) && world->regions[x][y][z] == 0) {
-	  world->region_count++;
-	  World_fill_region(world, world->region_count, x, y, z);
-	}
+        if(!TILE_EQ(world->tiles[x][y][z], WALL) && world->regions[x][y][z] == 0) {
+          world->region_count++;
+          World_fill_region(world, world->region_count, x, y, z);
+        }
       }
     }
+  }
+}
+
+
+static void World_add_items(World *world)
+{
+  Item *item;
+  int i = 0;
+  Point *empty_location;
+
+  for(i = 0; i < 500; i++) {
+    empty_location = World_get_empty_location(world);
+    item = Item_create_rock(empty_location);
+    World_add_item(world, item);
   }
 }
 
@@ -208,7 +223,7 @@ World *World_create()
   for(i = 0; i < width; i++) {
     for(j = 0; j < height; j++) {
       for(k = 0; k < depth; k++) {
-	world->tiles[i][j][k] = rand() % 2 == 1 ? WALL : FLOOR;
+        world->tiles[i][j][k] = rand() % 2 == 1 ? WALL : FLOOR;
       }
     }
   }
@@ -227,6 +242,7 @@ World *World_create()
   world->screen_left = 0;
 
   world->creatures = List_create();
+  world->items = List_create();
   world->messages = List_create();
 
   world->player = Creature_player_create(world);
@@ -236,8 +252,9 @@ World *World_create()
     creature = Creature_fungus_create(world);
     World_add_creature(world, creature);
     World_add_at_empty_location(world, creature);
-
   }
+
+  World_add_items(world);
 
   return world;
 }
@@ -262,6 +279,11 @@ void World_remove_creature(World *world, Creature *creature)
 
   Creature_destroy(node->value);
   List_remove(world->creatures, node);
+}
+
+void World_add_item(World *world, Item *item)
+{
+  List_push(world->items, item);
 }
 
 void World_tick(World *world)
@@ -304,12 +326,20 @@ void World_dig(World *world, int x, int y, int z)
 
 int World_can_enter(World *world, int x, int y, int z)
 {
-  return Tile_is_ground(World_tile(world, x, y, z)) && World_creature_at(world, x, y, z) == NULL;
+  return Tile_is_ground(World_tile(world, x, y, z)) && World_creature_at(world, x, y, z) == NULL &&
+    World_item_at(world, x, y, z) == NULL;
 }
 
-void World_add_at_empty_location(World *world, Creature *creature)
+int World_is_in_view(World *world, int x, int y)
+{
+  return WITHIN(x, world->screen_left, world->screen_left + world->screen_width) &&
+    WITHIN(y, world->screen_top, world->screen_top + world->screen_height);
+}
+
+Point* World_get_empty_location(World *world)
 {
   int x = 0, y = 0, z = 0;
+  Point *point;
 
   do {
     x = rand() % WORLD_WIDTH;
@@ -317,9 +347,25 @@ void World_add_at_empty_location(World *world, Creature *creature)
     z = rand() % WORLD_DEPTH;
   } while(!World_can_enter(world, x, y, z));
 
-  creature->x = x;
-  creature->y = y;
-  creature->z = z;
+  point = malloc(sizeof(Point));
+  die(point, "Out of memory");
+
+  point->x = x;
+  point->y = y;
+  point->z = z;
+
+  return point;
+}
+
+void World_add_at_empty_location(World *world, Creature *creature)
+{
+  Point *empty_location = World_get_empty_location(world);
+
+  creature->x = empty_location->x;
+  creature->y = empty_location->y;
+  creature->z = empty_location->z;
+
+  free(empty_location);
 }
 
 Creature *World_creature_at(World *world, int x, int y, int z)
@@ -340,11 +386,27 @@ Creature *World_creature_at(World *world, int x, int y, int z)
   return NULL;
 }
 
-void World_notify(World *world, char *message)
+Item *World_item_at(World *world, int x, int y, int z)
+{
+  Item *item = NULL;
+
+  LIST_FOREACH(world->items, first, next, node) {
+    item = node->value;
+    if(item->owner == NULL && item->point->x == x &&
+       item->point->y == y && item->point->z == z) {
+      return item;
+    }
+  }
+
+  return NULL;
+}
+
+void World_notify(World *world, char *message, int free_msg)
 {
   Message *m =  malloc(sizeof(Message));
   m->msg = message;
   m->life = 200;
+  m->free_msg = free_msg;
 
   List_push(world->messages, m);
 }

@@ -3,6 +3,7 @@
 
 #include <curses.h>
 #include "world.h"
+#include "item.h"
 
 struct CreatureAi;
 
@@ -20,6 +21,9 @@ typedef struct Creature {
 
   World *world;
   struct CreatureAi *ai;
+
+  int inventory_size;
+  Item *inventory[];
 } Creature;
 
 

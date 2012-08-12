@@ -2,6 +2,7 @@
 #include "creature_ai.h"
 #include "creature.h"
 #include "tile.h"
+#include "inventory.h"
 #include "utils.h"
 #include "dbg.h"
 
@@ -63,7 +64,7 @@ static void CreatureAi_player_attack(Creature *player, Creature *creature)
   amount = rand() % amount;
   creature->ai->hit(creature->ai, amount);
 
-  World_notify(player->world, "You have attacked a fungus");
+  World_notify(player->world, "You have attacked a fungus", 0);
 }
 
 static void CreatureAi_player_enter(CreatureAi *ai, int x, int y, int z)
@@ -77,16 +78,16 @@ static void CreatureAi_player_enter(CreatureAi *ai, int x, int y, int z)
 
   if(dz == -1) {
     if(TILE_EQ(current_tile, STAIR_UP)) {
-      World_notify(creature->world, "Walk up the stairs");
+      World_notify(creature->world, "Walk up the stairs", 0);
     } else {
-      World_notify(creature->world, "Not stairs in the top");
+      World_notify(creature->world, "Not stairs in the top", 0);
       return;
     }
   } else if(dz == 1) {
     if(TILE_EQ(current_tile, STAIR_DOWN)) {
-      World_notify(creature->world, "Walk down the stairs");
+      World_notify(creature->world, "Walk down the stairs", 0);
     } else {
-      World_notify(creature->world, "No stairs in the bottom");
+      World_notify(creature->world, "No stairs in the bottom", 0);
       return;
     }
   }
@@ -152,7 +153,7 @@ static List *Line(int x0, int y0, int x1, int y1)
   return points;
 }
 
-int CreatureAi_player_can_see(CreatureAi *ai, int x, int y, int z)
+static int CreatureAi_player_can_see(CreatureAi *ai, int x, int y, int z)
 {
   Creature *player = ai->creature;
 
@@ -176,9 +177,42 @@ int CreatureAi_player_can_see(CreatureAi *ai, int x, int y, int z)
   return 1;
 }
 
+static void CreatureAi_player_pickup(CreatureAi *ai, int x, int y, int z)
+{
+  Creature *player = ai->creature;
+  World *world = player->world;
+  Item *item = World_item_at(world, x, y, z);
+  char *message = NULL;
+
+  if(item == NULL) {
+    World_notify(world, "Grab at the ground", 0);
+  } else if(Inventory_is_full(player)) {
+    World_notify(world, "Inventory is full", 0);
+  } else {
+    asprintf(&message, "Pickup a %s", item->name);
+    World_notify(world, message, 1);
+    Inventory_add(player, item);
+  }
+}
+
+static void CreatureAi_player_drop(CreatureAi *ai, Item *item)
+{
+  Creature *player = ai->creature;
+  World *world = player->world;
+  char *message = NULL;
+  asprintf(&message, "Drop a %s", item->name);
+  World_notify(world, message, 1);
+  Inventory_remove(player, item);
+
+  Item_set_point(item, World_get_empty_location(world));
+}
+
 CreatureAi *CreatureAi_player_create(Creature *player)
 {
-  return CreatureAi_create(player, CreatureAi_player_enter, CreatureAi_player_tick, NULL, CreatureAi_player_can_see);
+  CreatureAi *player_ai =  CreatureAi_create(player, CreatureAi_player_enter, CreatureAi_player_tick, NULL, CreatureAi_player_can_see);
+  player_ai->pickup = CreatureAi_player_pickup;
+  player_ai->drop = CreatureAi_player_drop;
+  return player_ai;
 }
 
 #define FUNGI_SPREAD_DISTANCE 10
@@ -217,7 +251,7 @@ static void CreatureAi_fungus_enter(CreatureAi *ai, int x, int y, int z)
    }
 }
 
-void CreatureAi_fungus_tick(CreatureAi *fungus_ai)
+static void CreatureAi_fungus_tick(CreatureAi *fungus_ai)
 {
   Creature *fungus = fungus_ai->creature;
 

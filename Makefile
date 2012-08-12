@@ -3,6 +3,7 @@ LDFLAGS=-lncurses
 
 TARGET=build/cave
 SOURCES=$(wildcard src/*.c)
+HEADERS=$(wildcard src/*.h)
 OBJECTS=$(patsubst %.c,%.o,$(SOURCES))
 DEPS=$(patsubst %.c,%.d,$(SOURCES))
 
@@ -32,5 +33,8 @@ check-syntax: CFLAGS=-g -Wall -Wextra -Isrc $(OPTFLAG)
 check-syntax:
 	$(CC) $(CFLAGS) -fsyntax-only $(CHK_SOURCES)
 
+TAGS: $(SOURCES) $(HEADERS)
+	etags $^
+
 clean:
-	rm -rf build $(OBJECTS) $(DEPS)
+	rm -rf build $(OBJECTS) $(DEPS) TAGS

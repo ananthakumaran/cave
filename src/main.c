@@ -38,7 +38,7 @@ int main()
   init_pair(7, COLOR_WHITE, COLOR_BLACK);
   init_pair(8, COLOR_BLACK, COLOR_WHITE);
 
-  screen = Startscreen_create();
+  screen = Playscreen_create();
   game_loop();
   finish(0);
 }

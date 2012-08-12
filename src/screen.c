@@ -6,7 +6,9 @@
 #include "tile.h"
 #include "creature.h"
 #include "creature_ai.h"
+#include "inventory.h"
 #include "list.h"
+#include "item.h"
 
 #define ESCAPE_KEY 27
 #define NEW_LINE_KEY 10
@@ -15,7 +17,6 @@
 
 void Screen_destroy(Screen *screen)
 {
-  World_destroy(screen->world);
   free(screen);
 }
 
@@ -52,6 +53,7 @@ static void display_messages(List *messages, int height)
     m->life--;
 
     if(m->life < 1) {
+      if(m->free_msg) free(m->msg);
       free(m);
       List_push(dead_messages, cur);
     }
@@ -83,9 +85,38 @@ static void set_visible(Screen *screen, int x, int y, int z)
   Bitmap_set(screen->visible, (X * Y * z) + (X * y) + x);
 }
 
+static int can_see(Screen *screen, Creature *player, int x, int y, int z)
+{
+  if(is_visible(screen, x, y, z) ||
+     player->ai->can_see(player->ai, x, y, z)) {
+    set_visible(screen, x, y, z);
+    return 1;
+  }
 
-// start screen
-void Startscreen_draw(Screen *screen)
+  return 0;
+}
+
+static void display_items(Screen *screen)
+{
+  World *world = screen->world;
+  Creature *player = world->player;
+  Item *item;
+
+  LIST_FOREACH(world->items, first, next, node) {
+    item = node->value;
+
+    if(player->z == item->point->z && item->owner == NULL &&
+       can_see(screen, player, item->point->x, item->point->y, item->point->z) &&
+       World_is_in_view(world, item->point->x, item->point->y)) {
+
+      Tile_draw(item->tile, item->point->x - world->screen_left, item->point->y - world->screen_top);
+    }
+  }
+}
+
+
+// play screen
+void Playscreen_draw(Screen *screen)
 {
   int x = 0, y = 0, wx, wy, wz;
   Creature *creature;
@@ -101,8 +132,7 @@ void Startscreen_draw(Screen *screen)
       wx = world->screen_left + x;
       wy = world->screen_top + y;
       wz = player->z;
-      if(is_visible(screen, wx, wy, wz) || player->ai->can_see(player->ai, wx, wy, wz)) {
-	set_visible(screen, wx, wy, wz);
+      if(can_see(screen, player, wx, wy, wz)) {
 	Tile tile = World_tile(world, wx, wy, wz);
 	Tile_draw(tile, x, y);
       } else {
@@ -117,12 +147,13 @@ void Startscreen_draw(Screen *screen)
     creature = node->value;
 
     if(creature->z == player->z) {
-      if(is_visible(screen, creature->x, creature->y, creature->z) || player->ai->can_see(player->ai, creature->x, creature->y, player->z)) {
-	set_visible(screen, creature->x, creature->y, creature->z);
+      if(can_see(screen, player, creature->x, creature->y, creature->z)) {
 	Creature_draw(creature);
       }
     }
   }
+
+  display_items(screen);
 
   int status_board_height = world->screen_height + 1;
   move(status_board_height, 0);
@@ -134,7 +165,7 @@ void Startscreen_draw(Screen *screen)
 }
 
 
-Screen* Startscreen_handle_input(Screen *screen, int key)
+Screen* Playscreen_handle_input(Screen *screen, int key)
 {
   Creature *player = screen->world->player;
 
@@ -161,27 +192,115 @@ Screen* Startscreen_handle_input(Screen *screen, int key)
   case '>':
     Creature_move_by(player, 0, 0, 1);
     break;
+
+  case 'g':
+  case ',':
+    player->ai->pickup(player->ai, player->x, player->y, player->z);
+    break;
+
+  case 'd':
+    screen = Inventoryscreen_create(screen);
+    break;
   }
+
   return screen;
 }
 
-void Startscreen_tick(Screen *screen)
+void Playscreen_tick(Screen *screen)
 {
   World_tick(screen->world);
 }
 
-Screen* Startscreen_create()
+Screen* Playscreen_create()
 {
   Screen *screen = malloc(sizeof(Screen));
   die(screen, "Could not create screen.");
 
-  screen->draw = Startscreen_draw;
-  screen->handle_input = Startscreen_handle_input;
-  screen->tick = Startscreen_tick;
+  screen->draw = Playscreen_draw;
+  screen->handle_input = Playscreen_handle_input;
+  screen->tick = Playscreen_tick;
   screen->world = World_create();
   screen->visible = Bitmap_create(screen->world->width * screen->world->height * screen->world->depth);
 
   die(screen->visible, "Out of memory");
+
+
+  return screen;
+}
+
+Screen* Inventoryscreen_handle_input(Screen *screen, int key)
+{
+  World *world = screen->world;
+  Creature *player = world->player;
+  Screen *next_screen = screen;
+  Item *item;
+
+  int index = key - 'a';
+
+  if(WITHIN(index, 0, player->inventory_size - 1)) {
+    item = player->inventory[index];
+
+    if(item) {
+      player->ai->drop(player->ai, item);
+
+      next_screen = screen->parent;
+      Screen_destroy(screen);
+    } else {
+      World_notify(world, "Empty slot", 0);
+    }
+
+  } else if(key == 'x') {
+    next_screen = screen->parent;
+    Screen_destroy(screen);
+  } else {
+    World_notify(world, "Unknown key", 0);
+  }
+
+  return next_screen;
+}
+
+
+void Inventoryscreen_draw(Screen *screen)
+{
+  World *world = screen->world;
+  Creature *player = world->player;
+
+  char c = 'a';
+  int i = 0;
+
+  clear();
+
+
+  for(i = 0; i < player->inventory_size; i++, c++) {
+    move(i, 0);
+
+    addch(c);
+    addch(' ');
+
+    if(player->inventory[i] == NULL) {
+      addstr("empty");
+    } else {
+      addstr(player->inventory[i]->name);
+    }
+  }
+
+  move(i, 0);
+  addstr("What would you like to drop ?");
+
+  display_messages(world->messages, world->screen_height  + 1);
+
+}
+
+Screen* Inventoryscreen_create(Screen *play_screen)
+{
+  Screen *screen = malloc(sizeof(Screen));
+  die(screen, "Could not create inventory screen");
+
+  screen->draw = Inventoryscreen_draw;
+  screen->handle_input = Inventoryscreen_handle_input;
+  screen->tick = NULL;
+  screen->world = play_screen->world;
+  screen->parent = play_screen;
 
 
   return screen;
