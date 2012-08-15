@@ -287,10 +287,18 @@ void World_remove_item(World *world, Item *item)
 void World_tick(World *world)
 {
   Creature *creature;
-  LIST_FOREACH(world->creatures, first, next, node) {
+
+  List* creatures_copy = List_copy(world->creatures);
+
+  LIST_FOREACH(creatures_copy, first, next, node) {
     creature = node->value;
-    creature->ai->tick(creature->ai);
+
+    if(creature) {
+      creature->ai->tick(creature->ai);
+    }
   }
+
+  List_destroy(creatures_copy);
 
   world->player->ai->tick(world->player->ai);
 }

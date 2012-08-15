@@ -38,6 +38,8 @@ void List_shuffle(List *list);
 void* List_remove(List *list, ListNode *node);
 int List_delete(List *list, void *value);
 
+List* List_copy(List *list);
+
 #define LIST_FOREACH(L, S, M, V) ListNode *_node = NULL;	\
   ListNode *V = NULL;						\
   for(V = _node = L->S; _node != NULL; V = _node = _node->M)

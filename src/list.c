@@ -6,6 +6,17 @@ List *List_create()
   return calloc(1, sizeof(List));
 }
 
+List *List_copy(List *list)
+{
+  List *copy = List_create();
+
+  LIST_FOREACH(list, first, next, cur) {
+    List_push(copy, cur->value);
+  }
+
+  return copy;
+}
+
 void List_destroy(List *list)
 {
   LIST_FOREACH(list, first, next, cur) {
