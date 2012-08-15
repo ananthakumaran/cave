@@ -244,6 +244,7 @@ World *World_create()
   world->screen_left = 0;
 
   world->creatures = List_create();
+  world->dead_creatures = List_create();
   world->items = List_create();
   world->messages = List_create();
 
@@ -270,6 +271,7 @@ void World_remove_creature(World *world, Creature *creature)
   rc = List_delete(world->creatures, creature);
   die(rc != 0, "could not find the creature in the world.");
 
+  List_push(world->dead_creatures, creature);
   Creature_destroy(creature);
 }
 
@@ -293,12 +295,14 @@ void World_tick(World *world)
   LIST_FOREACH(creatures_copy, first, next, node) {
     creature = node->value;
 
-    if(creature) {
+    if(!List_contains(world->dead_creatures, creature)) {
       creature->ai->tick(creature->ai);
     }
   }
 
   List_destroy(creatures_copy);
+  List_destroy(world->dead_creatures);
+  world->dead_creatures = List_create();
 
   world->player->ai->tick(world->player->ai);
 }

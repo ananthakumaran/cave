@@ -27,6 +27,7 @@ typedef struct World {
   int region_count;
   struct Creature *player;
   List *creatures;
+  List *dead_creatures;
   List *items;
   List *messages;
 } World;
