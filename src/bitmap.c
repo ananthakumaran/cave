@@ -25,7 +25,7 @@ static char *Bitmap_byte(Bitmap *map, size_t n)
 
 int Bitmap_set(Bitmap *map, size_t n)
 {
-  check(n >= 0 && n < map->size, "out of bounds.");
+  check(n < map->size, "out of bounds.");
 
   int offset = n % 8;
   char *byte = Bitmap_byte(map, n);
@@ -39,7 +39,7 @@ int Bitmap_set(Bitmap *map, size_t n)
 
 int Bitmap_unset(Bitmap *map, size_t n)
 {
-  check(n >= 0 && n < map->size, "out of bounds.");
+  check(n < map->size, "out of bounds.");
 
   int offset = n % 8;
   char *byte = Bitmap_byte(map, n);
@@ -53,7 +53,7 @@ int Bitmap_unset(Bitmap *map, size_t n)
 
 int Bitmap_isset(Bitmap *map, size_t n)
 {
-  check(n >= 0 && n < map->size, "out of bounds.");
+  check(n < map->size, "out of bounds.");
 
   int offset = n % 8;
   char *byte = Bitmap_byte(map, n);

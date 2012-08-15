@@ -13,6 +13,7 @@ typedef struct Creature {
   int z;
   char glyph;
   int color;
+  char *name;
 
   int hit_point;
   int attack_value;
@@ -33,5 +34,6 @@ void Creature_move_by(Creature *creature, int x, int y, int z);
 
 Creature *Creature_player_create(World *world);
 Creature *Creature_fungus_create(World *world);
+Creature *Creature_apple_tree_create(World *world);
 
 #endif

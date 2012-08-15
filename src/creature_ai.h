@@ -28,6 +28,9 @@ struct CreatureAi {
 void CreatureAi_destroy(CreatureAi *ai);
 
 CreatureAi *CreatureAi_player_create(Creature *player);
+void CreatureAi_player_eat(CreatureAi *player_ai);
+
 CreatureAi *CreatureAi_fungus_create(Creature *fungus);
+CreatureAi *CreatureAi_apple_tree_create(Creature *apple_tree);
 
 #endif

@@ -41,6 +41,13 @@ Tile ROCK = {
   .color = 3
 };
 
+Tile APPLE = {
+  .glyph = 105,
+  .color = 2
+};
+
+
+
 
 Tile ***Tile_create(int width, int height, int depth)
 {

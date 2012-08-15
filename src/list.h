@@ -36,6 +36,7 @@ int List_contains(List *List, void *value);
 void List_shuffle(List *list);
 
 void* List_remove(List *list, ListNode *node);
+int List_delete(List *list, void *value);
 
 #define LIST_FOREACH(L, S, M, V) ListNode *_node = NULL;	\
   ListNode *V = NULL;						\

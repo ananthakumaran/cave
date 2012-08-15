@@ -9,17 +9,6 @@
 #include "list.h"
 #include "bitmap.h"
 
-Point *Point_create(int x, int y, int z)
-{
-  Point *point = malloc(sizeof(Point));
-  point->x = x;
-  point->y = y;
-  point->z = z;
-
-  return point;
-}
-
-
 Tile World_tile(World *world, int x, int y, int z)
 {
   if(x < 0 || x >= world->width || y < 0 || y >= world->height || z < 0 || z >= world->depth) {
@@ -208,11 +197,24 @@ static void World_add_items(World *world)
   }
 }
 
+typedef Creature *(*Creature_create_fn)(World *world);
+
+static void World_add_creatures(World *world, Creature_create_fn creator, int count)
+{
+  Creature *creature;
+
+  int i = 0;
+  for(i = 0; i < count; i++) {
+    creature = creator(world);
+    World_add_creature(world, creature);
+    World_add_at_empty_location(world, creature);
+  }
+}
+
 World *World_create()
 {
   World *world = malloc(sizeof(World));
   int i = 0, j = 0, k = 0;
-  Creature *creature;
 
   int height = WORLD_HEIGHT;
   int width = WORLD_WIDTH;
@@ -248,11 +250,8 @@ World *World_create()
   world->player = Creature_player_create(world);
   World_add_at_empty_location(world, world->player);
 
-  for(i = 0; i < 500; i++) {
-    creature = Creature_fungus_create(world);
-    World_add_creature(world, creature);
-    World_add_at_empty_location(world, creature);
-  }
+  World_add_creatures(world, Creature_fungus_create, 500);
+  World_add_creatures(world, Creature_apple_tree_create, 300);
 
   World_add_items(world);
 
@@ -266,24 +265,23 @@ void World_add_creature(World *world, Creature *creature)
 
 void World_remove_creature(World *world, Creature *creature)
 {
-  ListNode *node;
+  int rc;
 
-  LIST_FOREACH(world->creatures, first, next, cur) {
-    if(cur->value == creature) {
-      node = cur;
-      break;
-    }
-  }
+  rc = List_delete(world->creatures, creature);
+  die(rc != 0, "could not find the creature in the world.");
 
-  die(node, "could not find the creature in the world.");
-
-  Creature_destroy(node->value);
-  List_remove(world->creatures, node);
+  Creature_destroy(creature);
 }
 
 void World_add_item(World *world, Item *item)
 {
   List_push(world->items, item);
+}
+
+void World_remove_item(World *world, Item *item)
+{
+  List_delete(world->items, item);
+  Item_destroy(item);
 }
 
 void World_tick(World *world)

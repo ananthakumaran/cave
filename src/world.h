@@ -3,6 +3,7 @@
 
 #include "tile.h"
 #include "list.h"
+#include "utils.h"
 
 struct Creature;
 struct Item;
@@ -12,14 +13,6 @@ typedef struct Message {
   int life;
   int free_msg;
 } Message;
-
-typedef struct Point {
-  int x;
-  int y;
-  int z;
-} Point;
-
-Point *Point_create(int x, int y, int z);
 
 typedef struct World {
   int width;
@@ -62,9 +55,11 @@ void World_add_at_empty_location(World *world, struct Creature *creature);
 void World_add_creature(World *world, struct Creature *creature);
 void World_remove_creature(World *world, struct Creature *creature);
 void World_add_item(World *world, struct Item *item);
+void World_remove_item(World *world, struct Item *item);
 void World_notify(World *world, char *message, int free_msg);
 
 struct Creature *World_creature_at(World *world, int x, int y, int z);
 struct Item *World_item_at(World *world, int x, int y, int z);
+
 
 #endif

@@ -17,7 +17,12 @@ static void CreatureAi_hit_default(CreatureAi *ai, int power)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
 
-static void CreatureAi_player_tick(CreatureAi *ai)
+static void CreatureAi_enter_default(CreatureAi *ai, int x, int y, int z)
+{
+// noop
+}
+
+static void CreatureAi_tick_default(CreatureAi *ai)
 {
 // noop
 }
@@ -34,8 +39,18 @@ static CreatureAi *CreatureAi_create(Creature *creature, CreatureAi_enter enter,
 {
   CreatureAi *ai = malloc(sizeof(CreatureAi));
   ai->creature = creature;
-  ai->enter = enter;
-  ai->tick = tick;
+
+  if(tick) {
+    ai->tick = tick;
+  } else {
+    ai->tick = CreatureAi_tick_default;
+  }
+
+  if(enter) {
+    ai->enter = enter;
+  } else {
+    ai->enter = CreatureAi_enter_default;
+  }
 
   if(hit) {
     ai->hit = hit;
@@ -62,55 +77,61 @@ static void CreatureAi_player_attack(Creature *player, Creature *creature)
 {
   int amount = MAX(1, player->attack_value - creature->defense_value);
   amount = rand() % amount;
-  creature->ai->hit(creature->ai, amount);
 
-  World_notify(player->world, "You have attacked a fungus", 0);
+  char *message = NULL;
+  asprintf(&message, "You have attacked a %s", creature->name);
+  World_notify(player->world, message, 1);
+
+  creature->ai->hit(creature->ai, amount);
 }
 
 static void CreatureAi_player_enter(CreatureAi *ai, int x, int y, int z)
 {
   Tile tile = World_tile(ai->creature->world, x, y, z);
-  Creature *creature = ai->creature;
+  Creature *player = ai->creature;
 
-  int dz = z - ai->creature->z;
+  int dz = z - player->z;
 
-  Tile current_tile = World_tile(ai->creature->world, ai->creature->x, ai->creature->y, ai->creature->z);
+  Tile current_tile = World_tile(player->world, player->x, player->y, player->z);
 
   if(dz == -1) {
     if(TILE_EQ(current_tile, STAIR_UP)) {
-      World_notify(creature->world, "Walk up the stairs", 0);
+      World_notify(player->world, "Walk up the stairs", 0);
     } else {
-      World_notify(creature->world, "Not stairs in the top", 0);
+      World_notify(player->world, "Not stairs in the top", 0);
       return;
     }
   } else if(dz == 1) {
     if(TILE_EQ(current_tile, STAIR_DOWN)) {
-      World_notify(creature->world, "Walk down the stairs", 0);
+      World_notify(player->world, "Walk down the stairs", 0);
     } else {
-      World_notify(creature->world, "No stairs in the bottom", 0);
+      World_notify(player->world, "No stairs in the bottom", 0);
       return;
     }
   }
 
   if(dz != 0) {
-    creature->x = x;
-    creature->y = y;
-    creature->z = z;
+    player->x = x;
+    player->y = y;
+    player->z = z;
     return;
   }
 
-  Creature *other = World_creature_at(ai->creature->world, x, y, z);
+  Creature *other = World_creature_at(player->world, x, y, z);
 
   if(other) {
-    CreatureAi_player_attack(ai->creature, other);
+    CreatureAi_player_attack(player, other);
   } else {
     if(Tile_is_ground(tile)) {
-      creature->x = x;
-      creature->y = y;
-    } else if(Tile_is_diggable(tile)) {
-      World_dig(creature->world, x, y, z);
-      creature->x = x;
-      creature->y = y;
+      player->x = x;
+      player->y = y;
+    } else if(Tile_is_diggable(tile) && player->hit_point > 10) {
+
+      player->hit_point -= 10;
+      World_dig(player->world, x, y, z);
+      player->x = x;
+      player->y = y;
+
     }
   }
 }
@@ -195,6 +216,21 @@ static void CreatureAi_player_pickup(CreatureAi *ai, int x, int y, int z)
   }
 }
 
+void CreatureAi_player_eat(CreatureAi *ai)
+{
+  Creature *player = ai->creature;
+  World *world = player->world;
+  Item *item = World_item_at(world, player->x, player->y, player->z);
+
+  if(item == NULL) {
+    World_notify(world, "Nothing to eat", 0);
+  } else {
+    player->hit_point += 10;
+    World_notify(world, "Eat a apple", 0);
+    World_remove_item(world, item);
+  }
+}
+
 static void CreatureAi_player_drop(CreatureAi *ai, Item *item)
 {
   Creature *player = ai->creature;
@@ -209,7 +245,7 @@ static void CreatureAi_player_drop(CreatureAi *ai, Item *item)
 
 CreatureAi *CreatureAi_player_create(Creature *player)
 {
-  CreatureAi *player_ai =  CreatureAi_create(player, CreatureAi_player_enter, CreatureAi_player_tick, NULL, CreatureAi_player_can_see);
+  CreatureAi *player_ai =  CreatureAi_create(player, CreatureAi_player_enter, NULL, NULL, CreatureAi_player_can_see);
   player_ai->pickup = CreatureAi_player_pickup;
   player_ai->drop = CreatureAi_player_drop;
   return player_ai;
@@ -273,4 +309,33 @@ CreatureAi *CreatureAi_fungus_create(Creature *fungus)
   CreatureAi *fungus_ai = CreatureAi_create(fungus, CreatureAi_fungus_enter, CreatureAi_fungus_tick, NULL, NULL);
   fungus_ai->spread_count = 0;
   return fungus_ai;
+}
+
+// apple tree
+
+static void CreatureAi_apple_tree_tick(CreatureAi *apple_tree_ai)
+{
+  Creature *apple_tree = apple_tree_ai->creature;
+  World *world = apple_tree->world;
+  int x, y, z;
+  Point *point;
+  Item *item;
+
+  if(rand() % 10000 == 0) {
+    x = (rand() % 10) - 5 + apple_tree->x;
+    y = (rand() % 10) - 5 + apple_tree->y;
+    z = apple_tree->z;
+
+    if(World_can_enter(world, x, y, z)) {
+      point = Point_create(x, y, z);
+      item = Item_create_apple(point);
+      World_add_item(world, item);
+    }
+  }
+}
+
+CreatureAi *CreatureAi_apple_tree_create(Creature *apple_tree)
+{
+  CreatureAi *apple_tree_ai = CreatureAi_create(apple_tree, NULL, CreatureAi_apple_tree_tick, NULL, NULL);
+  return apple_tree_ai;
 }

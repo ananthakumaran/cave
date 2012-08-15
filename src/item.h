@@ -14,6 +14,7 @@ typedef struct Item {
 } Item;
 
 Item *Item_create_rock(Point *point);
+Item *Item_create_apple(Point *point);
 void Item_set_point(Item *item, Point *point);
 
 void Item_destroy(Item *item);

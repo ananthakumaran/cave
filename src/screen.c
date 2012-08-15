@@ -158,6 +158,7 @@ void Playscreen_draw(Screen *screen)
   int status_board_height = world->screen_height + 1;
   move(status_board_height, 0);
   char status[50];
+  clrtoeol();
   sprintf(status, "Health %3d", world->player->hit_point);
   addstr(status);
 
@@ -200,6 +201,10 @@ Screen* Playscreen_handle_input(Screen *screen, int key)
 
   case 'd':
     screen = Inventoryscreen_create(screen);
+    break;
+
+  case 'e':
+    CreatureAi_player_eat(player->ai);
     break;
   }
 

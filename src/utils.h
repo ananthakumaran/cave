@@ -8,4 +8,13 @@ int centeraddstr(int y, const char *str);
 
 #define WITHIN(x, a, b) (((x) >= (a)) && ((x) <= (b)))
 
+typedef struct Point {
+  int x;
+  int y;
+  int z;
+} Point;
+
+Point *Point_create(int x, int y, int z);
+
+
 #endif

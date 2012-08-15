@@ -95,6 +95,19 @@ int List_contains(List *list, void *value)
   return 0;
 }
 
+int List_delete(List *list, void *value)
+{
+
+  LIST_FOREACH(list, first, next, cur) {
+    if(cur->value == value) {
+      List_remove(list, cur);
+      return 1;
+    }
+  }
+
+  return 0;
+}
+
 void List_shuffle(List *list)
 {
   int times = List_count(list);

@@ -15,6 +15,19 @@ Item *Item_create_rock(Point *point)
   return item;
 }
 
+Item *Item_create_apple(Point *point)
+{
+  Item *item = malloc(sizeof(Item));
+  die(item, "Out of memory");
+
+  item->point = point;
+  item->name = "apple";
+  item->tile = APPLE;
+  item->owner = NULL;
+
+  return item;
+}
+
 void Item_set_point(Item *item, Point *point)
 {
   if(item->point) free(item->point);

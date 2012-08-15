@@ -6,17 +6,19 @@
 #include "utils.h"
 #include "dbg.h"
 
-static Creature* Creature_create(World *world, char glyph, int color, int inventory_size)
+static Creature* Creature_create(World *world, char *name, char glyph, int color, int inventory_size)
 {
   Creature *creature = malloc(sizeof(Creature) + inventory_size * sizeof(Item *));
   die(creature, "Could not create creature");
 
   creature->world = world;
+  creature->name = name;
   creature->glyph = glyph;
   creature->color = color;
   creature->x = -1;
   creature->y = -1;
   creature->z = -1;
+
 
   creature->hit_point = 0;
   creature->attack_value = 0;
@@ -57,7 +59,7 @@ void Creature_move_by(Creature *creature, int x, int y, int z)
 
 Creature *Creature_player_create(World *world)
 {
-  Creature *player = Creature_create(world, '{', 4, 20);
+  Creature *player = Creature_create(world, "player", '{', 4, 20);
   player->hit_point = 100;
   player->attack_value = 20;
   player->defense_value = 5;
@@ -68,10 +70,20 @@ Creature *Creature_player_create(World *world)
 
 Creature *Creature_fungus_create(World *world)
 {
-  Creature *fungus = Creature_create(world, '}', 3, 0);
+  Creature *fungus = Creature_create(world, "fungus", '}', 3, 0);
   fungus->hit_point = 10;
   fungus->attack_value = 1;
   fungus->defense_value = 0;
   fungus->ai = CreatureAi_fungus_create(fungus);
   return fungus;
+}
+
+Creature *Creature_apple_tree_create(World *world)
+{
+  Creature *apple_tree = Creature_create(world, "apple tree", 119, 1, 0);
+  apple_tree->hit_point = 10;
+  apple_tree->attack_value = 1;
+  apple_tree->defense_value = 0;
+  apple_tree->ai = CreatureAi_apple_tree_create(apple_tree);
+  return apple_tree;
 }

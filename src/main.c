@@ -13,6 +13,30 @@ static void game_loop();
 
 static Screen *screen = NULL;
 
+static void print_glyphs()
+{
+  int i = 0;
+  char num[50];
+  int h = 0;
+  int w = 0;
+  for(i = 0; i < 127; i++) {
+
+    w++;
+    if(i % 10 == 0) {
+      h++;
+      w = 0;
+      move(h, w);
+    }
+
+    addch(NCURSES_ACS(i));
+    sprintf(num, " %d", i);
+    addstr(num);
+  }
+
+  refresh();
+  sleep(50);
+}
+
 int main()
 {
 
@@ -40,6 +64,9 @@ int main()
 
   screen = Playscreen_create();
   game_loop();
+
+  /* print_glyphs(); */
+
   finish(0);
 }
 
