@@ -183,18 +183,31 @@ static void World_create_regions(World *world)
   }
 }
 
+typedef Item *(*Item_create_fn)(Point *point);
+
+static void World_introduce_item(World *world, Item_create_fn creator, int count)
+{
+  Point *empty_location;
+  int i;
+  Item *item;
+
+  for(i = 0; i < count; i++) {
+    empty_location = World_get_empty_location(world);
+    item = creator(empty_location);
+    World_add_item(world, item);
+  }
+}
 
 static void World_add_items(World *world)
 {
-  Item *item;
-  int i = 0;
-  Point *empty_location;
 
-  for(i = 0; i < 500; i++) {
-    empty_location = World_get_empty_location(world);
-    item = Item_create_rock(empty_location);
-    World_add_item(world, item);
-  }
+  World_introduce_item(world, Item_create_rock, 500);
+  World_introduce_item(world, Item_create_dagger, 50);
+  World_introduce_item(world, Item_create_sword, 10);
+  World_introduce_item(world, Item_create_staff, 25);
+  World_introduce_item(world, Item_create_tunic, 50);
+  World_introduce_item(world, Item_create_chainmail, 25);
+  World_introduce_item(world, Item_create_platemail, 10);
 }
 
 typedef Creature *(*Creature_create_fn)(World *world);
@@ -365,6 +378,24 @@ Point* World_get_empty_location(World *world)
   point->z = z;
 
   return point;
+}
+
+Point *World_get_empty_location_around(World *world, int x, int y, int z)
+{
+  int nx, ny;
+
+  for(nx = x - 1; nx <= x + 1; nx++) {
+    if(nx < 0 || nx >= world->width) continue;
+    for(ny = y - 1; ny <= y + 1; ny++) {
+      if(ny < 0 || ny >= world->height) continue;
+
+      if(World_can_enter(world, nx, ny, z)) {
+	return Point_create(nx, ny, z);
+      }
+    }
+  }
+
+  return NULL;
 }
 
 void World_add_at_empty_location(World *world, Creature *creature)

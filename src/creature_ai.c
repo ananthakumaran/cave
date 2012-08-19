@@ -72,10 +72,23 @@ void CreatureAi_destroy(CreatureAi *ai)
   free(ai);
 }
 
+int CreatureAi_player_attack_value(Creature *player)
+{
+  int value = player->attack_value;
+
+  if(player->weapon) value += player->weapon->attack_value;
+  if(player->armor) value += player->armor->attack_value;
+
+  return value;
+}
+
 
 static void CreatureAi_player_attack(Creature *player, Creature *creature)
 {
-  int amount = MAX(1, player->attack_value - creature->defense_value);
+
+  int attack_value = CreatureAi_player_attack_value(player);
+
+  int amount = MAX(1, attack_value - creature->defense_value);
   amount = rand() % amount;
 
   char *message = NULL;
@@ -136,44 +149,6 @@ static void CreatureAi_player_enter(CreatureAi *ai, int x, int y, int z)
   }
 }
 
-
-static List *Line(int x0, int y0, int x1, int y1)
-{
-  List *points = List_create();
-
-  Point *point;
-
-  int sx, sy, err, e2;
-  int dx = abs(x1 - x0);
-  int dy = abs(y1 - y0);
-
-  sx = x0 < x1 ? 1 : -1;
-  sy = y0 < y1 ? 1 : -1;
-
-  err = dx - dy;
-
-  while(1) {
-    if(x0 == x1 && y0 == y1) break;
-
-    point = Point_create(x0, y0, 0);
-    List_push(points, point);
-
-    e2 = 2 * err;
-
-    if(e2 > -dy) {
-      err -= dy;
-      x0 += sx;
-    }
-
-    if(e2 < dx) {
-      err += dx;
-      y0 += sy;
-    }
-  }
-
-  return points;
-}
-
 static int CreatureAi_player_can_see(CreatureAi *ai, int x, int y, int z)
 {
   Creature *player = ai->creature;
@@ -221,13 +196,21 @@ void CreatureAi_player_eat(CreatureAi *ai)
   Creature *player = ai->creature;
   World *world = player->world;
   Item *item = World_item_at(world, player->x, player->y, player->z);
+  char *message;
 
   if(item == NULL) {
     World_notify(world, "Nothing to eat", 0);
   } else {
-    player->hit_point += 10;
-    World_notify(world, "Eat a apple", 0);
-    World_remove_item(world, item);
+
+    if(item->food_value > 0) {
+      player->hit_point += item->food_value;
+      asprintf(&message, "Eat a %s", item->name);
+      World_remove_item(world, item);
+    } else {
+      asprintf(&message, "Can't Eat a %s", item->name);
+    }
+
+    World_notify(world, message, 1);
   }
 }
 
@@ -236,11 +219,63 @@ static void CreatureAi_player_drop(CreatureAi *ai, Item *item)
   Creature *player = ai->creature;
   World *world = player->world;
   char *message = NULL;
-  asprintf(&message, "Drop a %s", item->name);
-  World_notify(world, message, 1);
-  Inventory_remove(player, item);
+  Point *empty;
 
-  Item_set_point(item, World_get_empty_location(world));
+  if((empty = World_get_empty_location_around(world, player->x, player->y, player->z))) {
+    ai->unequip(ai, item);
+    asprintf(&message, "Drop a %s", item->name);
+    Inventory_remove(player, item);
+    Item_set_point(item, empty);
+  } else {
+    asprintf(&message, "No empty place to drop %s", item->name);
+  }
+
+  World_notify(world, message, 1);
+}
+
+static void CreatureAi_player_equip(CreatureAi *ai, Item *item)
+{
+  Creature *player = ai->creature;
+  World *world = player->world;
+  char *message = NULL;
+
+  if(item->attack_value == 0 && item->defense_value == 0) {
+    asprintf(&message, "Can't wear/wield a %s", item->name);
+    World_notify(world, message, 1);
+    return;
+  }
+
+
+  if(item->attack_value >= item->defense_value) {
+    ai->unequip(ai, player->weapon);
+    asprintf(&message, "Wield a %s", item->name);
+    World_notify(world, message, 1);
+    player->weapon = item;
+  } else {
+    ai->unequip(ai, player->armor);
+    asprintf(&message, "Put on a %s", item->name);
+    World_notify(world, message, 1);
+    player->armor = item;
+  }
+}
+
+static void CreatureAi_player_unequip(CreatureAi *ai, Item *item)
+{
+  Creature *player = ai->creature;
+  World *world = player->world;
+  char *message = NULL;
+
+  if(item == NULL) return;
+
+  if(player->armor == item) {
+    asprintf(&message, "Remove a %s", item->name);
+    World_notify(world, message, 1);
+    player->armor = NULL;
+  } else if(player->weapon == item) {
+    asprintf(&message, "Put away %s", item->name);
+    World_notify(world, message, 1);
+    player->weapon = NULL;
+  }
 }
 
 CreatureAi *CreatureAi_player_create(Creature *player)
@@ -248,6 +283,8 @@ CreatureAi *CreatureAi_player_create(Creature *player)
   CreatureAi *player_ai =  CreatureAi_create(player, CreatureAi_player_enter, NULL, NULL, CreatureAi_player_can_see);
   player_ai->pickup = CreatureAi_player_pickup;
   player_ai->drop = CreatureAi_player_drop;
+  player_ai->equip = CreatureAi_player_equip;
+  player_ai->unequip = CreatureAi_player_unequip;
   return player_ai;
 }
 

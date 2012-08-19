@@ -18,6 +18,7 @@ struct Screen {
   Bitmap *visible;
 
   Screen* parent;
+  char *action;
 };
 
 
@@ -31,6 +32,6 @@ Screen* Playscreen_create();
 // inventory screen
 void Inventoryscreen_draw();
 Screen* Inventoryscreen_handle_input(Screen *screen, int key);
-Screen* Inventoryscreen_create(Screen *play_screen);
+Screen* Inventoryscreen_create(Screen *play_screen, char *action);
 
 #endif

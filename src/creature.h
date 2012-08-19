@@ -20,6 +20,9 @@ typedef struct Creature {
   int defense_value;
   int vision_radius;
 
+  Item *armor;
+  Item *weapon;
+
   World *world;
   struct CreatureAi *ai;
 

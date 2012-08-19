@@ -26,6 +26,9 @@ static Creature* Creature_create(World *world, char *name, char glyph, int color
   creature->vision_radius = 0;
   creature->inventory_size = inventory_size;
 
+  creature->armor = NULL;
+  creature->weapon = NULL;
+
   int i = 0;
   for(i = 0; i < creature->inventory_size; i++) {
     creature->inventory[i] = NULL;
@@ -61,7 +64,7 @@ Creature *Creature_player_create(World *world)
 {
   Creature *player = Creature_create(world, "player", '{', 4, 20);
   player->hit_point = 100;
-  player->attack_value = 20;
+  player->attack_value = 5;
   player->defense_value = 5;
   player->vision_radius = 10;
   player->ai = CreatureAi_player_create(player);

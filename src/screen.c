@@ -72,8 +72,9 @@ static int is_visible(Screen *screen, int x, int y, int z)
 {
   int X = screen->world->width;
   int Y = screen->world->height;
-
-  return Bitmap_isset(screen->visible, (X * Y * z) + (X * y) + x);
+  int rc = Bitmap_isset(screen->visible, (X * Y * z) + (X * y) + x);
+  die(rc != -1, "Out of bounds");
+  return rc;
 }
 
 static void set_visible(Screen *screen, int x, int y, int z)
@@ -81,8 +82,10 @@ static void set_visible(Screen *screen, int x, int y, int z)
 
   int X = screen->world->width;
   int Y = screen->world->height;
+  int rc;
 
-  Bitmap_set(screen->visible, (X * Y * z) + (X * y) + x);
+  rc = Bitmap_set(screen->visible, (X * Y * z) + (X * y) + x);
+  die(rc != 0, "Out of bounds");
 }
 
 static int can_see(Screen *screen, Creature *player, int x, int y, int z)
@@ -159,7 +162,11 @@ void Playscreen_draw(Screen *screen)
   move(status_board_height, 0);
   char status[50];
   clrtoeol();
-  sprintf(status, "Health %3d", world->player->hit_point);
+  sprintf(status, "Health %3d, Power %d, Armor %s, Weapon %s",
+	  player->hit_point,
+	  CreatureAi_player_attack_value(player),
+	  player->armor == NULL ? "none" : player->armor->name,
+	  player->weapon == NULL ? "none" : player->weapon->name);
   addstr(status);
 
   display_messages(world->messages, status_board_height + 1);
@@ -200,7 +207,11 @@ Screen* Playscreen_handle_input(Screen *screen, int key)
     break;
 
   case 'd':
-    screen = Inventoryscreen_create(screen);
+    screen = Inventoryscreen_create(screen, "drop");
+    break;
+
+  case 'w':
+    screen = Inventoryscreen_create(screen, "wear");
     break;
 
   case 'e':
@@ -238,6 +249,7 @@ Screen* Inventoryscreen_handle_input(Screen *screen, int key)
   World *world = screen->world;
   Creature *player = world->player;
   Screen *next_screen = screen;
+  char *action = screen->action;
   Item *item;
 
   int index = key - 'a';
@@ -246,7 +258,14 @@ Screen* Inventoryscreen_handle_input(Screen *screen, int key)
     item = player->inventory[index];
 
     if(item) {
-      player->ai->drop(player->ai, item);
+
+      if(strcmp("drop", action) == 0) {
+	player->ai->drop(player->ai, item);
+      } else if(strcmp("wear", action) == 0) {
+	player->ai->equip(player->ai, item);
+      } else {
+	die(0, "Unknown action in inventory screen");
+      }
 
       next_screen = screen->parent;
       Screen_destroy(screen);
@@ -273,11 +292,10 @@ void Inventoryscreen_draw(Screen *screen)
   char c = 'a';
   int i = 0;
 
-  clear();
-
 
   for(i = 0; i < player->inventory_size; i++, c++) {
     move(i, 0);
+    clrtoeol();
 
     addch(c);
     addch(' ');
@@ -290,13 +308,16 @@ void Inventoryscreen_draw(Screen *screen)
   }
 
   move(i, 0);
-  addstr("What would you like to drop ?");
+  clrtoeol();
+  addstr("What would you like to ");
+  addstr(screen->action);
+  addstr(" ?");
 
   display_messages(world->messages, world->screen_height  + 1);
 
 }
 
-Screen* Inventoryscreen_create(Screen *play_screen)
+Screen* Inventoryscreen_create(Screen *play_screen, char *action)
 {
   Screen *screen = malloc(sizeof(Screen));
   die(screen, "Could not create inventory screen");
@@ -306,6 +327,7 @@ Screen* Inventoryscreen_create(Screen *play_screen)
   screen->tick = NULL;
   screen->world = play_screen->world;
   screen->parent = play_screen;
+  screen->action = action;
 
 
   return screen;

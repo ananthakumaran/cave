@@ -47,6 +47,38 @@ Tile APPLE = {
 };
 
 
+Tile DAGGER = {
+  .glyph = 106,
+  .color = 5
+};
+
+Tile SWORD = {
+  .glyph = 117,
+  .color = 5
+};
+
+Tile STAFF = {
+  .glyph = 102,
+  .color = 5
+};
+
+Tile TUNIC = {
+  .glyph = 105,
+  .color = 5
+};
+
+Tile CHAIN_MAIL = {
+  .glyph = 97,
+  .color = 5
+};
+
+Tile PLATE_MAIL = {
+  .glyph = 96,
+  .color = 5
+};
+
+
+
 
 
 Tile ***Tile_create(int width, int height, int depth)

@@ -52,6 +52,7 @@ int World_can_enter(World *world, int x, int y, int z);
 int World_is_in_view(World *world, int x, int y);
 
 Point *World_get_empty_location(World *world);
+Point *World_get_empty_location_around(World *world, int x, int y, int z);
 void World_add_at_empty_location(World *world, struct Creature *creature);
 void World_add_creature(World *world, struct Creature *creature);
 void World_remove_creature(World *world, struct Creature *creature);
