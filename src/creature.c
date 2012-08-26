@@ -60,6 +60,11 @@ void Creature_move_by(Creature *creature, int x, int y, int z)
   creature->ai->enter(creature->ai, creature->x + x, creature->y + y, creature->z + z);
 }
 
+Point *Creature_location(Creature *creature)
+{
+  return Point_create(creature->x, creature->y, creature->z);
+}
+
 Creature *Creature_player_create(World *world)
 {
   Creature *player = Creature_create(world, "player", '{', 4, 20);
@@ -89,4 +94,16 @@ Creature *Creature_apple_tree_create(World *world)
   apple_tree->defense_value = 0;
   apple_tree->ai = CreatureAi_apple_tree_create(apple_tree);
   return apple_tree;
+}
+
+Creature *Creature_zombie_create(World *world)
+{
+  Creature *zombie = Creature_create(world, "zombie", '}', 4, 0);
+  zombie->hit_point = 30;
+  zombie->attack_value = 5;
+  zombie->defense_value = 0;
+  zombie->vision_radius = 10;
+  zombie->ai = CreatureAi_zombie_create(zombie);
+
+  return zombie;
 }

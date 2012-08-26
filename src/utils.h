@@ -17,7 +17,10 @@ typedef struct Point {
 } Point;
 
 Point *Point_create(int x, int y, int z);
+#define POINT_EQ(A, B) ((A)->x == (B)->x && (A)->y == (B)->y && (A)->z == (B)->z)
 
 List *Line(int x0, int y0, int x1, int y1);
+
+
 
 #endif

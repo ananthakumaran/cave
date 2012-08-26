@@ -266,6 +266,7 @@ World *World_create()
 
   World_add_creatures(world, Creature_fungus_create, 500);
   World_add_creatures(world, Creature_apple_tree_create, 300);
+  World_add_creatures(world, Creature_zombie_create, 20);
 
   World_add_items(world);
 

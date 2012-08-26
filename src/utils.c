@@ -2,6 +2,8 @@
 #include <curses.h>
 #include <string.h>
 #include <stdlib.h>
+#include "dbg.h"
+
 
 int centeraddstr(int y, const char *str)
 {
@@ -12,6 +14,8 @@ int centeraddstr(int y, const char *str)
 Point *Point_create(int x, int y, int z)
 {
   Point *point = malloc(sizeof(Point));
+  die(point, "Out of memory");
+
   point->x = x;
   point->y = y;
   point->z = z;

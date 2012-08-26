@@ -37,5 +37,6 @@ int CreatureAi_player_attack_value(Creature *player);
 
 CreatureAi *CreatureAi_fungus_create(Creature *fungus);
 CreatureAi *CreatureAi_apple_tree_create(Creature *apple_tree);
+CreatureAi *CreatureAi_zombie_create(Creature *zombie);
 
 #endif

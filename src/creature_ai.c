@@ -4,6 +4,7 @@
 #include "tile.h"
 #include "inventory.h"
 #include "utils.h"
+#include "path.h"
 #include "dbg.h"
 
 static void CreatureAi_hit_default(CreatureAi *ai, int power)
@@ -12,6 +13,30 @@ static void CreatureAi_hit_default(CreatureAi *ai, int power)
   if(ai->creature->hit_point < 1) {
     World_remove_creature(ai->creature->world, ai->creature);
   }
+}
+
+static int CreatureAi_creature_can_see(CreatureAi *ai, int x, int y, int z)
+{
+  Creature *creature = ai->creature;
+
+  if(creature->z != z) return 0;
+
+  if((creature->x - x) * (creature->x - x) + (creature->y - y) * (creature->y - y) >
+     creature->vision_radius * creature->vision_radius) return 0;
+
+  List *points = Line(creature->x, creature->y, x, y);
+
+  Point *p;
+  LIST_FOREACH(points, first, next, cur) {
+    p = cur->value;
+    if(!(Tile_is_ground(World_tile(creature->world, p->x, p->y, creature->z)) || (creature->x == p->x && creature->y == p->y))) {
+      List_clear_destroy(points);
+      return 0;
+    }
+  }
+
+  List_clear_destroy(points);
+  return 1;
 }
 
 #pragma GCC diagnostic push
@@ -149,30 +174,6 @@ static void CreatureAi_player_enter(CreatureAi *ai, int x, int y, int z)
   }
 }
 
-static int CreatureAi_player_can_see(CreatureAi *ai, int x, int y, int z)
-{
-  Creature *player = ai->creature;
-
-  if(player->z != z) return 0;
-
-  if((player->x - x) * (player->x - x) + (player->y - y) * (player->y - y) >
-     player->vision_radius * player->vision_radius) return 0;
-
-  List *points = Line(player->x, player->y, x, y);
-
-  Point *p;
-  LIST_FOREACH(points, first, next, cur) {
-    p = cur->value;
-    if(!(Tile_is_ground(World_tile(player->world, p->x, p->y, player->z)) || (player->x == p->x && player->y == p->y))) {
-      List_clear_destroy(points);
-      return 0;
-    }
-  }
-
-  List_clear_destroy(points);
-  return 1;
-}
-
 static void CreatureAi_player_pickup(CreatureAi *ai, int x, int y, int z)
 {
   Creature *player = ai->creature;
@@ -280,7 +281,7 @@ static void CreatureAi_player_unequip(CreatureAi *ai, Item *item)
 
 CreatureAi *CreatureAi_player_create(Creature *player)
 {
-  CreatureAi *player_ai =  CreatureAi_create(player, CreatureAi_player_enter, NULL, NULL, CreatureAi_player_can_see);
+  CreatureAi *player_ai =  CreatureAi_create(player, CreatureAi_player_enter, NULL, NULL, CreatureAi_creature_can_see);
   player_ai->pickup = CreatureAi_player_pickup;
   player_ai->drop = CreatureAi_player_drop;
   player_ai->equip = CreatureAi_player_equip;
@@ -311,13 +312,11 @@ static void fungus_spread(CreatureAi *fungus_ai)
 static void CreatureAi_fungus_enter(CreatureAi *ai, int x, int y, int z)
 {
   Creature *fungus = ai->creature;
-  Tile tile = World_tile(fungus->world, x, y, z);
-
-  Creature *other = World_creature_at(ai->creature->world, x, y, z);
+  Creature *other = World_creature_at(fungus->world, x, y, z);
 
   if(other) {
     other->ai->hit(other->ai, fungus->attack_value);
-  } else if(Tile_is_ground(tile)) {
+  } else if(World_can_enter(fungus->world, x, y, z)) {
      fungus->x = x;
      fungus->y = y;
      fungus->z = z;
@@ -375,4 +374,59 @@ CreatureAi *CreatureAi_apple_tree_create(Creature *apple_tree)
 {
   CreatureAi *apple_tree_ai = CreatureAi_create(apple_tree, NULL, CreatureAi_apple_tree_tick, NULL, NULL);
   return apple_tree_ai;
+}
+
+static void CreatureAi_zombie_enter(CreatureAi *zombie_ai, int x, int y, int z)
+{
+  Creature *zombie = zombie_ai->creature;
+  Creature *other = World_creature_at(zombie->world, x, y, z);
+
+  if(other) {
+    other->ai->hit(other->ai, zombie->attack_value);
+  } else if(World_can_enter(zombie->world, x, y, z)){
+    zombie->x = x;
+    zombie->y = y;
+    zombie->z = z;
+  }
+}
+
+static void CreatureAi_zombie_tick(CreatureAi *zombie_ai)
+{
+  Creature *zombie = zombie_ai->creature;
+  Creature *player = zombie->world->player;
+  int mx, my;
+
+  if(rand() % 100 == 0) {
+
+    if(zombie_ai->can_see(zombie_ai, player->x, player->y, player->z)) {
+      Point *source = Creature_location(zombie);
+      Point *destination = Creature_location(player);
+      List *points = Path(zombie->world, source, destination);
+
+      if(points) {
+	Point *first = List_first(points);
+	mx = first->x - zombie->x;
+	my = first->y - zombie->y;
+
+	Creature_move_by(zombie, mx, my, 0);
+
+	List_clear_destroy(points);
+      }
+
+
+    } else {
+      mx = (rand() % 3) - 1;
+      my = (rand() % 3) - 1;
+
+      Creature_move_by(zombie, mx, my, 0);
+    }
+  }
+}
+
+// zombie
+CreatureAi *CreatureAi_zombie_create(Creature *zombie)
+{
+  return CreatureAi_create(zombie, CreatureAi_zombie_enter,
+			   CreatureAi_zombie_tick, NULL,
+			   CreatureAi_creature_can_see);
 }
