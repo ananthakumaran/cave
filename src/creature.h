@@ -19,6 +19,7 @@ typedef struct Creature {
   int attack_value;
   int defense_value;
   int vision_radius;
+  int alive;
 
   Item *armor;
   Item *weapon;

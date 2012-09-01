@@ -63,5 +63,6 @@ void World_notify(World *world, char *message, int free_msg);
 struct Creature *World_creature_at(World *world, int x, int y, int z);
 struct Item *World_item_at(World *world, int x, int y, int z);
 
+void Message_destroy(Message *message);
 
 #endif

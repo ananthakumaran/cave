@@ -51,6 +51,19 @@ static void World_alloc_regions(World *world)
   world->regions = regions;
 }
 
+static void World_dealloc_regions(World *world)
+{
+  int i, j;
+  for(i = 0; i < world->width; i++) {
+    for(j = 0; j < world->height; j++) {
+      free(world->regions[i][j]);
+    }
+    free(world->regions[i]);
+  }
+
+  free(world->regions);
+}
+
 static void World_fill_region(World *world, int region, int x, int y, int z)
 {
 
@@ -224,6 +237,28 @@ static void World_add_creatures(World *world, Creature_create_fn creator, int co
   }
 }
 
+static void World_destroy_creatures(World *world)
+{
+  Creature *creature;
+
+  LIST_FOREACH(world->creatures, first, next, cur) {
+    creature = cur->value;
+    Creature_destroy(creature);
+  }
+
+  List_destroy(world->creatures);
+  List_destroy(world->dead_creatures);
+}
+
+static void World_destroy_messages(World *world)
+{
+  LIST_FOREACH(world->messages, first, next, cur) {
+    Message_destroy(cur->value);
+  }
+
+  List_destroy(world->messages);
+}
+
 World *World_create()
 {
   World *world = malloc(sizeof(World));
@@ -282,11 +317,24 @@ void World_remove_creature(World *world, Creature *creature)
 {
   int rc;
 
-  rc = List_delete(world->creatures, creature);
-  die(rc != 0, "could not find the creature in the world.");
+  if(creature == world->player) {
+    creature->alive = 0;
+  } else {
+    rc = List_delete(world->creatures, creature);
+    die(rc != 0, "could not find the creature in the world.");
 
-  List_push(world->dead_creatures, creature);
-  Creature_destroy(creature);
+    List_push(world->dead_creatures, creature);
+    Creature_destroy(creature);
+  }
+}
+
+static void World_destroy_items(World *world)
+{
+  LIST_FOREACH(world->items, first, next, cur) {
+    Item_destroy(cur->value);
+  }
+
+  List_destroy(world->items);
 }
 
 void World_add_item(World *world, Item *item)
@@ -324,6 +372,11 @@ void World_tick(World *world)
 void World_destroy(World *world)
 {
   Tile_destroy(world->tiles, world->height, world->width);
+  World_dealloc_regions(world);
+  World_destroy_creatures(world);
+  World_destroy_messages(world);
+  World_destroy_items(world);
+  Creature_destroy(world->player);
   free(world);
 }
 
@@ -451,4 +504,11 @@ void World_notify(World *world, char *message, int free_msg)
   m->free_msg = free_msg;
 
   List_push(world->messages, m);
+}
+
+
+void Message_destroy(Message *message)
+{
+  if(message->free_msg) free(message->msg);
+  free(message);
 }

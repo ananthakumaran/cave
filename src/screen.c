@@ -53,8 +53,7 @@ static void display_messages(List *messages, int height)
     m->life--;
 
     if(m->life < 1) {
-      if(m->free_msg) free(m->msg);
-      free(m);
+      Message_destroy(m);
       List_push(dead_messages, cur);
     }
   }
@@ -117,9 +116,20 @@ static void display_items(Screen *screen)
   }
 }
 
+static Screen *Screen_create(Screen_draw draw, Screen_handle_input handle_input)
+{
+  Screen *screen = malloc(sizeof(Screen));
+  die(screen, "Could not create screen");
+
+  screen->draw = draw;
+  screen->handle_input = handle_input;
+
+  return screen;
+}
+
 
 // play screen
-void Playscreen_draw(Screen *screen)
+static void Playscreen_draw(Screen *screen)
 {
   int x = 0, y = 0, wx, wy, wz;
   Creature *creature;
@@ -173,7 +183,7 @@ void Playscreen_draw(Screen *screen)
 }
 
 
-Screen* Playscreen_handle_input(Screen *screen, int key)
+static Screen* Playscreen_handle_input(Screen *screen, int key)
 {
   Creature *player = screen->world->player;
 
@@ -222,18 +232,29 @@ Screen* Playscreen_handle_input(Screen *screen, int key)
   return screen;
 }
 
-void Playscreen_tick(Screen *screen)
+static void Playscreen_destroy(Screen *screen)
+{
+  World_destroy(screen->world);
+  Bitmap_destroy(screen->visible);
+  Screen_destroy(screen);
+}
+
+static Screen *Playscreen_tick(Screen *screen)
 {
   World_tick(screen->world);
+
+  if(!screen->world->player->alive) {
+    Playscreen_destroy(screen);
+    screen = Startscreen_create();
+  }
+
+  return screen;
 }
 
 Screen* Playscreen_create()
 {
-  Screen *screen = malloc(sizeof(Screen));
-  die(screen, "Could not create screen.");
+  Screen *screen = Screen_create(Playscreen_draw, Playscreen_handle_input);
 
-  screen->draw = Playscreen_draw;
-  screen->handle_input = Playscreen_handle_input;
   screen->tick = Playscreen_tick;
   screen->world = World_create();
   screen->visible = Bitmap_create(screen->world->width * screen->world->height * screen->world->depth);
@@ -244,7 +265,7 @@ Screen* Playscreen_create()
   return screen;
 }
 
-Screen* Inventoryscreen_handle_input(Screen *screen, int key)
+static Screen* Inventoryscreen_handle_input(Screen *screen, int key)
 {
   World *world = screen->world;
   Creature *player = world->player;
@@ -284,7 +305,7 @@ Screen* Inventoryscreen_handle_input(Screen *screen, int key)
 }
 
 
-void Inventoryscreen_draw(Screen *screen)
+static void Inventoryscreen_draw(Screen *screen)
 {
   World *world = screen->world;
   Creature *player = world->player;
@@ -319,16 +340,62 @@ void Inventoryscreen_draw(Screen *screen)
 
 Screen* Inventoryscreen_create(Screen *play_screen, char *action)
 {
-  Screen *screen = malloc(sizeof(Screen));
-  die(screen, "Could not create inventory screen");
+  Screen *screen = Screen_create(Inventoryscreen_draw, Inventoryscreen_handle_input);
 
-  screen->draw = Inventoryscreen_draw;
-  screen->handle_input = Inventoryscreen_handle_input;
   screen->tick = NULL;
   screen->world = play_screen->world;
   screen->parent = play_screen;
   screen->action = action;
 
+
+  return screen;
+}
+
+// start screen
+static Screen* Startscreen_handle_input(Screen *screen, int key)
+{
+  switch(key) {
+  case 's':
+    Screen_destroy(screen);
+    screen = Playscreen_create();
+    break;
+  case 'q':
+    Screen_destroy(screen);
+    screen = NULL;
+    break;
+  }
+
+  return screen;
+}
+
+static void Startscreen_draw(Screen *screen)
+{
+
+  int height = 10;
+  size_t i;
+  char *banner[] = {
+    "Welcome to cave",
+    "",
+    "",
+    "Press [s] to start or [q] to quit",
+    "",
+    "-----------",
+    "",
+    ""
+  };
+
+  for(i = 0; i < (sizeof(banner) / sizeof(char *)); i++) {
+    move(height + i, 0);
+    addstr(banner[i]);
+  }
+
+}
+
+
+Screen* Startscreen_create()
+{
+  Screen *screen = Screen_create(Startscreen_draw, Startscreen_handle_input);
+  screen->tick = NULL;
 
   return screen;
 }

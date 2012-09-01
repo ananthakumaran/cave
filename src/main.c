@@ -11,8 +11,6 @@
 static void finish(int sig);
 static void game_loop();
 
-static Screen *screen = NULL;
-
 static void print_glyphs()
 {
   int i = 0;
@@ -62,8 +60,7 @@ int main()
   init_pair(7, COLOR_WHITE, COLOR_BLACK);
   init_pair(8, COLOR_BLACK, COLOR_WHITE);
 
-  screen = Playscreen_create();
-  game_loop();
+  game_loop(Startscreen_create());
 
   /* print_glyphs(); */
 
@@ -76,7 +73,7 @@ static void finish(int sig)
   exit(sig);
 }
 
-void game_loop()
+void game_loop(Screen *screen)
 {
   int input;
 
@@ -91,7 +88,10 @@ void game_loop()
     }
 
     usleep(5000);
-    if(screen->tick) screen->tick(screen);
+    if(screen && screen->tick) {
+      screen = screen->tick(screen);
+    }
+
 
   } while(screen != NULL);
 

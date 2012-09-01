@@ -25,6 +25,7 @@ static Creature* Creature_create(World *world, char *name, char glyph, int color
   creature->defense_value = 0;
   creature->vision_radius = 0;
   creature->inventory_size = inventory_size;
+  creature->alive = 1;
 
   creature->armor = NULL;
   creature->weapon = NULL;
